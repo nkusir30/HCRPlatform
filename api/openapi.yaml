@@ -1,0 +1,21 @@
+openapi: 3.0.3
+info: { title: HCR Platform API, version: 1.0.0 }
+paths:
+  /api/v1/timesheets/{publicId}:
+    get: { summary: Get timesheet dossier (both weeks, server-computed totals) }
+  /api/v1/timesheets/{publicId}/accept:
+    post: { summary: Owner-only accept (attested + totalsHash, idempotent 409) }
+  /api/v1/timesheets/{publicId}/approve:
+    post: { summary: Manager/admin approve (locks entries) }
+  /api/v1/timesheets/{publicId}/disapprove:
+    post: { summary: Disapprove (reason REQUIRED, revokes file URL) }
+  /api/v1/timesheets/{publicId}/file:
+    get: { summary: Signed timesheet file URL (APPROVED only) }
+  /api/v1/timesheets/missing:
+    get: { summary: Non-submitters anti-join per period }
+  /api/v1/timesheets/remind:
+    post: { summary: Targeted/bulk reminders (rate-limited, idempotent) }
+  /api/v1/schedules:
+    get: { summary: Period×house grid (Week One/Two × 3 templates) }
+  /api/v1/reports/{type}:
+    get: { summary: GET-based reports (shifts|timesheets|programs|staff|compliance|coverage-variance|overtime) + export formats }

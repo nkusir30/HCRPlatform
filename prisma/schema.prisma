@@ -1,0 +1,1432 @@
+// ---------------------------------------------------------------
+// REFERENCE / HISTORY (non-tenant core)
+// ---------------------------------------------------------------
+model Department {
+  id        String   @id @default(cuid())
+  orgId     String
+  companyId String
+  houseId   String?
+  name      String
+  code      String   @unique
+  sortOrder Int      @default(100)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  org     Organization @relation(fields: [orgId], references: [id])
+  company Company      @relation(fields: [companyId], references: [id])
+  house   House?       @relation(fields: [houseId], references: [id])
+
+  @@index([orgId])
+  @@index([companyId])
+  @@map("departments")
+}
+
+model Program {
+  id          String   @id @default(cuid())
+  orgId       String
+  companyId   String
+  houseId     String?
+  programId   String   @unique
+  name        String
+  code        String   @unique
+  description String?
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(100)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  org     Organization @relation(fields: [orgId], references: [id])
+  company Company      @relation(fields: [companyId], references: [id])
+  house   House?       @relation(fields: [houseId], references: [id])
+  shifts  Shift[]
+
+  @@index([orgId])
+  @@index([companyId])
+  @@index([active])
+  @@map("programs")
+}
+
+model Certification {
+  id          String    @id @default(cuid())
+  orgId       String
+  employeeId  String
+  certId      String    @unique
+  issuer      String
+  certNumber  String?
+  issuingDate DateTime
+  expiryDate  DateTime?
+  status      String    @default("valid")
+  issuedBy    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([orgId])
+  @@index([employeeId])
+  @@index([status])
+  @@map("certifications")
+}
+
+model Holiday {
+  id        String   @id @default(cuid())
+  orgId     String
+  companyId String
+  houseId   String?
+  holidayId String   @unique
+  name      String
+  date      DateTime
+  type      String   @default("personal")
+  observed  Boolean  @default(true)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  org     Organization @relation(fields: [orgId], references: [id])
+  company Company      @relation(fields: [companyId], references: [id])
+  house   House?       @relation(fields: [houseId], references: [id])
+
+  @@index([orgId])
+  @@index([date])
+  @@map("holidays")
+}
+
+model Attendance {
+  id           String   @id @default(cuid())
+  orgId        String
+  employeeId   String
+  attendanceId String   @unique
+  shiftId      String?
+  jobId        String?
+  date         DateTime
+  status       String   @default("present")
+  hours        Float?
+  overtimeHrs  Float?
+  notes        String?
+  recordedAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+  shift    Shift?   @relation(fields: [shiftId], references: [id])
+
+  @@index([orgId])
+  @@index([employeeId])
+  @@index([date])
+  @@map("attendances")
+}
+
+// ---------------------------------------------------------------
+// INTEGRATIONS / WEBHOOKS
+// ---------------------------------------------------------------
+model Integration {
+  id           String    @id @default(cuid())
+  orgId        String
+  provider     String    @unique
+  tenant       String?
+  name         String?
+  type         String?
+  accessToken  String?
+  refreshToken String?
+  accountId    String?
+  settings     Json?
+  status       String    @default("inactive")
+  lastPingAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  org Organization @relation(fields: [orgId], references: [id])
+
+  @@index([orgId])
+  @@index([provider])
+  @@map("integrations")
+}
+
+model Webhook {
+  id            String    @id @default(cuid())
+  orgId         String
+  event         String    @default("any")
+  endpoint      String    @default("")
+  secretHash    String?   @unique
+  url           String?   @unique
+  eventTypes    Json?
+  secretId      String?
+  settings      Json?
+  enabled       Boolean   @default(true)
+  status        String    @default("active")
+  attempts      Int       @default(0)
+  lastAttemptAt DateTime?
+  lastResponse  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  org Organization @relation(fields: [orgId], references: [id])
+
+  @@index([orgId])
+  @@index([event])
+  @@index([status])
+  @@map("webhooks")
+}
+
+// ---------------------------------------------------------------
+// REPORTS (GREENFIELD)
+// ---------------------------------------------------------------
+model ReportRequest {
+  id           String    @id @default(cuid())
+  orgId        String
+  type         String
+  params       Json?
+  reportId     String?   @unique
+  resultData   Json?
+  s3Url        String?
+  exportId     String?
+  status       String    @default("queued")
+  csvUrl       String?
+  excelUrl     String?
+  downloadedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  org          Organization  @relation(fields: [orgId], references: [id])
+  ReportExport ReportExport?
+
+  @@index([orgId])
+  @@index([status])
+  @@map("report_requests")
+}
+
+model ReportExport {
+  id        String   @id @default(cuid())
+  orgId     String
+  requestId String   @unique
+  type      String
+  format    String   @default("csv")
+  rows      Int
+  createdAt DateTime @default(now())
+  url       String   @unique
+  expiresAt DateTime
+
+  reportRequest ReportRequest @relation(fields: [requestId], references: [id])
+
+  @@index([orgId])
+  @@index([requestId])
+  @@map("report_exports")
+}
+
+// ---------------------------------------------------------------
+// WORKFLOW / RULES
+// ---------------------------------------------------------------
+model WorkflowRule {
+  id          String   @id @default(cuid())
+  orgId       String
+  companyId   String?
+  name        String
+  description String?
+  ruleId      String?  @unique
+  type        String?
+  status      String?
+  event       String   @default("manual")
+  condition   Json?
+  action      Json?
+  config      Json?
+  settings    Json?
+  enabled     Boolean  @default(true)
+  priority    Int      @default(100)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  org Organization @relation(fields: [orgId], references: [id])
+
+  @@index([orgId])
+  @@index([enabled])
+  @@map("workflow_rules")
+}
+
+model PromptTemplate {
+  id          String   @id @default(cuid())
+  orgId       String
+  name        String
+  description String?
+  prompt      String   @default("")
+  content     String?
+  systemPrompt String?
+  category    String?
+  sortOrder   Int      @default(0)
+  model       String   @default("gpt-4o-mini")
+  temperature Float?   @default(0.2)
+  maxTokens   Int?     @default(1024)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  org Organization @relation(fields: [orgId], references: [id])
+}
+
+// ---------------------------------------------------------------
+// AI / CHATBOT
+// ---------------------------------------------------------------
+model AiConversation {
+  id             String    @id @default(cuid())
+  orgId          String
+  userId         String?
+  conversationId String?
+  sessionId      String?
+  title          String?
+  status         String?
+  usage          Json?
+  model          String?   @default("gpt-4o-mini")
+  prompt         String?
+  response       String?
+  summary        String?
+  startedAt      DateTime?
+  endedAt        DateTime?
+  metadata       Json?
+  tone           String?   @default("professional")
+  language       String    @default("en")
+  initialPrompt  String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user     User?       @relation(fields: [userId], references: [id])
+  messages AiMessage[]
+
+  @@index([orgId])
+  @@index([userId])
+  @@index([sessionId])
+  @@map("ai_conversations")
+}
+
+model AiMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  orgId          String
+  role           String   @default("user")
+  content        String?
+  status         String?
+  tokens         Int?
+  prompt         String?
+  model          String?
+  response       String?
+  errorMessage   String?
+  durationMs     Int?
+  tokenCount     Int?     @default(0)
+  isToolCall     Boolean  @default(false)
+  toolName       String?
+  toolOutput     String?
+  timestamp      DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  conversation AiConversation @relation(fields: [conversationId], references: [id])
+
+  @@index([orgId])
+  @@index([conversationId])
+  @@index([timestamp])
+  @@map("ai_messages")
+}
+
+// ---------------------------------------------------------------
+// DOCUMENTS / SIGNATURES
+// ---------------------------------------------------------------
+model Document {
+  id           String    @id @default(cuid())
+  orgId        String
+  userId       String?
+  employeeId   String?
+  companyId    String?
+  houseId      String?
+  type         String
+  folder       String?
+  filename     String    @default("")
+  originalName String    @default("")
+  mimeType     String    @default("application/octet-stream")
+  sizeBytes    Int       @default(0)
+  url          String    @default("")
+  status       String    @default("uploaded")
+  docId        String?   @unique
+  title        String?
+  category     String?
+  fileUrl      String?
+  fileName     String?
+  fileSize     Int?
+  passwordProtected Boolean @default(false)
+  expiresAt    DateTime?
+  encryptedData Json?
+  encryptionKeyId String?
+  signerIds    Json?
+  isSigned     Boolean   @default(false)
+  signedAt     DateTime?
+  signedBy     String?
+  metadata     Json?
+  uploadedAt   DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  org       Organization @relation(fields: [orgId], references: [id])
+  user      User?        @relation(fields: [userId], references: [id])
+  company   Company?     @relation(fields: [companyId], references: [id])
+  house     House?       @relation(fields: [houseId], references: [id])
+  employee  Employee?    @relation(fields: [employeeId], references: [id])
+  Signature Signature[]
+
+  @@index([orgId])
+  @@index([userId])
+  @@index([companyId])
+  @@index([employeeId])
+  @@index([type])
+  @@index([status])
+  @@map("documents")
+}
+
+model Signature {
+  id         String    @id @default(cuid())
+  orgId      String
+  docId      String?
+  userId     String?
+  docVersion Int       @default(1)
+  status     String    @default("pending")
+  documentId String?
+  signerId   String?
+  signatureType String?
+  checksum   String?
+  pageNumber Int?
+  signatureData Json?
+  signedUrl  String?
+  signatureUrl String?
+  ipAddress  String?   @db.VarChar(45)
+  userAgent  String?
+  signedAt   DateTime?
+  declinedAt DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  document Document? @relation(fields: [docId], references: [id])
+  user     User?     @relation(fields: [userId], references: [id])
+
+  @@index([orgId])
+  @@index([docId])
+  @@index([userId])
+  @@index([status])
+  @@map("signatures")
+}
+
+// ---------------------------------------------------------------
+// AUDIT / COMPLIANCE
+// ---------------------------------------------------------------
+model AuditLog {
+  id         String   @id @default(cuid())
+  orgId      String
+  userId     String?
+  action     String
+  resource   String
+  resourceId String?
+  ipAddress  String?  @db.VarChar(45)
+  userAgent  String?
+  payload    Json?
+  createdAt  DateTime @default(now())
+
+  user       User?     @relation(fields: [userId], references: [id])
+  Employee   Employee? @relation(fields: [employeeId], references: [id])
+  employeeId String?
+  Employer   Employer? @relation(fields: [employerId], references: [id])
+  employerId String?
+
+  @@index([orgId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([userId])
+  @@map("audit_logs")
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  orgId     String
+  userId    String?
+  type      String    @default("info")
+  title     String    @default("")
+  body      String?
+  data      Json?
+  notificationId String? @unique
+  status    String    @default("sent")
+  url       String?
+  metadata  Json?
+  recipientIds Json?
+  scheduledFor DateTime?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([orgId])
+  @@index([userId])
+  @@index([readAt])
+  @@map("notifications")
+}
+
+// ---------------------------------------------------------------
+// CLIENT / CONTRACTOR
+// ---------------------------------------------------------------
+model Contractor {
+  id                 String   @id @default(cuid())
+  orgId              String
+  companyId          String
+  contractorId       String   @unique
+  firstName          String
+  lastName           String
+  email              String   @unique
+  phone              String?  @db.VarChar(30)
+  employerId         String?
+  employerName       String?
+  employerAddress1   String?
+  employerCity       String?
+  employerState      String?
+  employerPostalCode String?
+  ssnLast4           String?  @db.VarChar(4)
+  hourlyRate         Decimal
+  totalPayments      Decimal
+  status             String   @default("active")
+  taxForm            String?  @default("w9")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  org      Organization @relation(fields: [orgId], references: [id])
+  company  Company      @relation(fields: [companyId], references: [id])
+  employer Employer?    @relation(fields: [employerId], references: [id])
+  ten9289s Ten9289[]
+  payments Payment[]
+
+  @@index([orgId])
+  @@index([companyId])
+  @@index([employerId])
+  @@map("contractors")
+}
+
+// ---------------------------------------------------------------
+// BENEFITS
+// ---------------------------------------------------------------
+model Benefit {
+  id           String   @id @default(cuid())
+  orgId        String
+  companyId    String
+  houseId      String?
+  benefitId    String   @unique
+  name         String
+  category     String   @default("health")
+  type         String   @default("individual")
+  coverage     String?
+  monthlyCost  Decimal?
+  companyShare Decimal?
+  active       Boolean  @default(true)
+  sortOrder    Int      @default(100)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  org         Organization        @relation(fields: [orgId], references: [id])
+  company     Company             @relation(fields: [companyId], references: [id])
+  house       House?              @relation(fields: [houseId], references: [id])
+  enrollments BenefitEnrollment[]
+
+  @@index([orgId])
+  @@index([benefitId])
+  @@index([category])
+  @@map("benefits")
+}
+
+model BenefitEnrollment {
+  id            String    @id @default(cuid())
+  orgId         String
+  employeeId    String
+  benefitId     String
+  enrollmentId  String    @unique
+  coverage      String?
+  effectiveDate DateTime
+  endDate       DateTime?
+  status        String    @default("enrolled")
+  optedOut      Boolean   @default(false)
+  dateElected   DateTime?
+  premiumPaid   Decimal?
+  paidBy        String?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+  benefit  Benefit  @relation(fields: [benefitId], references: [id])
+
+  @@index([orgId])
+  @@index([employeeId])
+  @@index([benefitId])
+  @@index([effectiveDate])
+  @@map("benefit_enrollments")
+}
+
+// deprecated legacy shift table (kept for compatibility)
+model Jobs {
+  id              String   @id @default(cuid())
+  orgId           String
+  companyId       String
+  payrollPeriodId String
+  employeeId      String
+  programId       String?
+  label           String
+  date            DateTime
+  startTime       String
+  endTime         String
+  shiftType       String   @default("awake")
+  status          String   @default("scheduled")
+  groupId         Int?
+  isClosed        Boolean  @default(false)
+  hoursType       String?
+  comment         String?
+  payload         Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  payrollPeriod PayrollPeriod    @relation(fields: [payrollPeriodId], references: [id])
+  company       Company          @relation(fields: [companyId], references: [id])
+  employee      Employee         @relation(fields: [employeeId], references: [id])
+  entries       TimesheetEntry[]
+
+  @@index([orgId])
+  @@index([companyId])
+  @@index([employeeId])
+  @@index([payrollPeriodId])
+  @@map("jobs")
+}
+
+// ---------------------------------------------------------------
+// TIMESHEET / ATTESTATION / APPROVAL
+// ---------------------------------------------------------------
+model Timesheet {
+  id                String    @id @default(cuid())
+  orgId             String
+  companyId         String
+  houseId           String?
+  payrollPeriodId   String
+  employeeId        String
+  status            String    @default("draft")
+  isLocked          Boolean   @default(false)
+  isDeleted         Boolean   @default(false)
+  attestation       Json?
+  attestationHash   String?
+  attestationAt     DateTime?
+  acceptedBy        String?
+  acceptedAt        DateTime?
+  approvedAt        DateTime?
+  disapprovedAt     DateTime?
+  disapprovedBy     String?
+  approvalReason    String?
+  disapprovalReason String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  payrollPeriod  PayrollPeriod    @relation(fields: [payrollPeriodId], references: [id])
+  company        Company          @relation(fields: [companyId], references: [id])
+  house          House?           @relation(fields: [houseId], references: [id])
+  employee       Employee         @relation(fields: [employeeId], references: [id])
+  approvals      Approval[]
+  TimesheetEntry TimesheetEntry[]
+
+  @@index([orgId])
+  @@index([companyId])
+  @@index([employeeId])
+  @@index([payrollPeriodId])
+  @@index([status])
+  @@map("timesheets")
+}
+
+model TimesheetEntry {
+  id            String    @id @default(cuid())
+  orgId         String
+  timesheetId   String
+  companyId     String
+  shiftId       String?
+  jobId         String?
+  startTime     DateTime
+  endTime       DateTime
+  durationHours Float?
+  hoursType     String?
+  comment       String?
+  isScheduled   Boolean   @default(true)
+  isOverride    Boolean   @default(false)
+  submittedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  timesheet Timesheet @relation(fields: [timesheetId], references: [id])
+  shift     Shift?    @relation(fields: [shiftId], references: [id])
+  job       Jobs?     @relation(fields: [jobId], references: [id])
+
+  @@index([orgId])
+  @@index([timesheetId])
+  @@index([companyId])
+  @@index([shiftId])
+  @@map("timesheet_entries")
+}
+
+model Approval {
+  id              String    @id @default(cuid())
+  orgId           String
+  payrollPeriodId String
+  employeeId      String
+  timesheetId     String
+  approverId      String
+  approverName    String
+  status          String    @default("pending")
+  comment         String?
+  reasonRequired  Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  approvedAt      DateTime?
+  disapprovedAt   DateTime?
+
+  payrollPeriod PayrollPeriod @relation(fields: [payrollPeriodId], references: [id])
+  employee      Employee      @relation(fields: [employeeId], references: [id])
+  approver      User          @relation(fields: [approverId], references: [id])
+  timesheet     Timesheet     @relation(fields: [timesheetId], references: [id])
+
+  @@index([orgId])
+  @@index([employeeId])
+  @@index([timesheetId])
+  @@index([status])
+  @@map("approvals")
+}
+
+// ---------------------------------------------------------------------------
+// SCHEDULE / TIME
+// ---------------------------------------------------------------------------
+model WorkSchedule {
+  id              String   @id @default(cuid())
+  orgId           String
+  employeeId      String
+  payrollPeriodId String
+  scheduleType    String   @default("shift")
+  dayOfWeek       Int
+  startTime       String
+  endTime         String
+  isBreak         Boolean  @default(false)
+  comment         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  payrollPeriod PayrollPeriod @relation(fields: [payrollPeriodId], references: [id])
+  employee      Employee      @relation(fields: [employeeId], references: [id])
+
+  @@index([orgId])
+  @@index([employeeId])
+  @@index([payrollPeriodId])
+  @@map("work_schedules")
+}
+
+model Shift {
+  id              String   @id @default(cuid())
+  orgId           String
+  companyId       String
+  houseId         String?
+  payrollPeriodId String
+  employeeId      String
+  programId       String?
+  label           String
+  date            DateTime
+  startTime       String
+  endTime         String
+  shiftType       String   @default("awake")
+  status          String   @default("scheduled")
+  groupId         Int?
+  isClosed        Boolean  @default(false)
+  hoursType       String?
+  comment         String?
+  payload         Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  payrollPeriod  PayrollPeriod    @relation(fields: [payrollPeriodId], references: [id])
+  company        Company          @relation(fields: [companyId], references: [id])
+  house          House?           @relation(fields: [houseId], references: [id])
+  employee       Employee         @relation(fields: [employeeId], references: [id])
+  Program        Program?         @relation(fields: [programId], references: [id])
+  Attendance     Attendance[]
+  TimesheetEntry TimesheetEntry[]
+
+  @@index([orgId])
+  @@index([companyId])
+  @@index([employeeId])
+  @@index([payrollPeriodId])
+  @@index([date])
+  @@index([employeeId, date])
+  @@map("shifts")
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  orgId           String
+  payrollPeriodId String
+  employerId      String?
+  payoutId        String?
+  employeeId      String?
+  amount          Decimal
+  paymentMethod   String
+  paymentProvider String?
+  providerTxnId   String?
+  status          String   @default("pending")
+  checksum        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  payrollPeriod PayrollPeriod @relation(fields: [payrollPeriodId], references: [id])
+  employer      Employer?     @relation(fields: [employerId], references: [id])
+  payout        Payout?       @relation(fields: [payoutId], references: [id])
+  employee      Employee?     @relation(fields: [employeeId], references: [id])
+  Contractor    Contractor?   @relation(fields: [contractorId], references: [id])
+  contractorId  String?
+
+  @@index([orgId])
+  @@index([payrollPeriodId])
+  @@index([status])
+  @@map("payments")
+}
+
+// ---------------------------------------------------------------------------
+// TAX
+// ---------------------------------------------------------------------------
+model TaxRecord {
+  id              String    @id @default(cuid())
+  orgId           String
+  employeeId      String
+  employerId      String?
+  payrollPeriodId String?
+  taxYear         Int
+  state           String   @default("NA")
+  taxId           String?
+  taxType         String?
+  payerId         String?
+  payerName       String?
+  date            DateTime?
+  federalTax      Float?
+  ficaSocialSecurityTax Float?
+  ficaMedicareTax Float?
+  stateTax        Float?
+  localTax        Float?
+  totalTax        Float?
+  basisPoints     Float?
+  federalW4       Json?
+  stateW4         Json?
+  wages           Decimal  @default(0)
+  federalWithheld Decimal  @default(0)
+  stateWithheld   Decimal  @default(0)
+  ficaAmount      Decimal  @default(0)
+  localWithheld   Decimal  @default(0)
+  totWithheld     Decimal  @default(0)
+  paidAt          DateTime?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  payrollPeriod PayrollPeriod? @relation(fields: [payrollPeriodId], references: [id])
+  employee      Employee?      @relation(fields: [employeeId], references: [id])
+  employer      Employer?      @relation(fields: [employerId], references: [id])
+
+  @@index([orgId])
+  @@index([employeeId])
+  @@index([taxYear])
+  @@index([state])
+  @@map("tax_records")
+}
+
+model TaxReport {
+  id              String   @id @default(cuid())
+  orgId           String
+  payrollPeriodId String   @unique
+  taxYear         Int
+  state           String
+  employerId      String?
+  totalWages      Decimal
+  totalWithheld   Decimal
+  employeeCount   Int
+  fileUrl         String?  @unique
+  status          String   @default("draft")
+  eftPSyncStatus  String   @default("unsynced")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  payrollPeriod PayrollPeriod @relation(fields: [payrollPeriodId], references: [id])
+  employer      Employer?     @relation(fields: [employerId], references: [id])
+
+  @@index([orgId])
+  @@index([payrollPeriodId])
+  @@map("tax_reports")
+}
+
+model W2 {
+  id              String    @id @default(cuid())
+  orgId           String
+  employeeId      String
+  employerId      String?
+  taxYear         Int
+  payrollPeriodId String
+  wages           Decimal  @default(0)
+  federalWg       Decimal  @default(0)
+  stateWg         Decimal  @default(0)
+  localWg         Decimal  @default(0)
+  fidcAmount      Decimal  @default(0)
+  totWg           Decimal  @default(0)
+  annualWages          Float?
+  federalIncomeTax     Float?
+  ficaSocialSecurityTax Float?
+  ficaMedicareTax      Float?
+  stateIncomeTax       Float?
+  localIncomeTax       Float?
+  totalCompensation    Float?
+  deductibleBenefits   Float?
+  agencyFees           Float?
+  otherIncome          Float?
+  taxWithheld          Float?
+  federalEIN           String?
+  stateId              String?
+  stateTaxAgencyId     String?
+  pdfUrl          String?   @unique
+  readyAt         DateTime?
+  status          String    @default("draft")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  employee      Employee      @relation(fields: [employeeId], references: [id])
+  employer      Employer?     @relation(fields: [employerId], references: [id])
+  payrollPeriod PayrollPeriod @relation(fields: [payrollPeriodId], references: [id])
+
+  @@index([orgId])
+  @@index([employeeId])
+  @@index([taxYear])
+  @@map("w2s")
+}
+
+model Ten9289 {
+  id            String    @id @default(cuid())
+  orgId         String
+  contractorId  String?
+  employerId    String?
+  taxYear       Int
+  w9FormUrl     String?   @unique
+  totalPayments Decimal @default(0)
+  federalWg     Decimal  @default(0)
+  stateWg       Decimal  @default(0)
+  localWg       Decimal  @default(0)
+  totWg         Decimal  @default(0)
+  employeeId          String?
+  payrollPeriodId     String?
+  annualNonEmployeeCompensation Float?
+  fees                Float?
+  emergencyMedicareWithheld Float?
+  federalEIN          String?
+  recipientSSNLast4   String?
+  recipientName       String?
+  recipientAddress1   String?
+  recipientCity       String?
+  recipientState      String?
+  recipientPostalCode String?
+  recipientCountry    String?
+  stateId             String?
+  stateTaxAgencyId    String?
+  pdfUrl        String?   @unique
+  readyAt       DateTime?
+  status        String    @default("draft")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  contractor Contractor? @relation(fields: [contractorId], references: [id])
+  employer   Employer?  @relation(fields: [employerId], references: [id])
+
+  @@index([orgId])
+  @@index([contractorId])
+  @@index([taxYear])
+  @@map("ten9289s")
+}
+
+// ---------------------------------------------------------------------------
+// PAYMENT / PAYROLL
+// ---------------------------------------------------------------------------
+model PayrollPeriod {
+  id                String   @id @default(cuid())
+  orgId             String
+  companyId         String
+  houseId           String?
+  payrollId         String   @unique @default(cuid())
+  name              String   @default("")
+  periodId          String?
+  payrollFrequency  String?
+  currency          String?
+  settings          Json?
+  startDate         DateTime
+  endDate           DateTime
+  status            String   @default("draft")
+  payrateType       String   @default("hourly")
+  standardHours     Float?   @default(40.0)
+  contractorsOnly   Boolean  @default(false)
+  bankAccountNumber String?
+  bankRoutingNumber String?
+  bankName          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  org           Organization   @relation(fields: [orgId], references: [id])
+  company       Company        @relation(fields: [companyId], references: [id])
+  house         House?         @relation(fields: [houseId], references: [id])
+  payslips      Paycheck[]
+  taxReports    TaxReport[]
+  pockets       Payout[]
+  payments      Payment[]
+  timesheets    Timesheet[]
+  workSchedules WorkSchedule[]
+  Jobs          Jobs[]
+  Approval      Approval[]
+  Shift         Shift[]
+  TaxRecord     TaxRecord[]
+  W2            W2[]
+  Employee      Employee?      @relation(fields: [employeeId], references: [id])
+  employeeId    String?
+
+  @@index([orgId])
+  @@index([companyId])
+  @@index([payrollId])
+  @@index([startDate])
+  @@map("payroll_periods")
+}
+
+model Paycheck {
+  id              String   @id @default(cuid())
+  payrollPeriodId String
+  employeeId      String
+  orgId           String
+  employerId      String?
+  grossAmount     Decimal
+  netAmount       Decimal
+  hoursWorked     Float?
+  regularHours    Float?
+  overtimeHours   Float?
+  opComprehensive Boolean  @default(false)
+  payslipPdfUrl   String?
+  pdfTxnId        String?
+  status          String   @default("draft")
+  bankTxnId       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  payrollPeriod PayrollPeriod @relation(fields: [payrollPeriodId], references: [id])
+  employee      Employee      @relation(fields: [employeeId], references: [id])
+
+  @@index([orgId])
+  @@index([payrollPeriodId])
+  @@index([employeeId])
+  @@index([status])
+  @@map("paychecks")
+}
+
+model Payout {
+  id              String   @id @default(cuid())
+  orgId           String
+  employerId      String?
+  payrollPeriodId String   @unique
+  grossAmount     Decimal
+  netAmount       Decimal
+  payeeId         String?
+  payrollRunDate  DateTime
+  status          String   @default("draft")
+  fundingSource   String?
+  fundingTxId     String?
+  bankAccount     String?  @unique
+  bankRouting     String?
+  bankName        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  org           Organization  @relation(fields: [orgId], references: [id])
+  payrollPeriod PayrollPeriod @relation(fields: [payrollPeriodId], references: [id])
+  Payment       Payment[]
+
+  @@index([orgId])
+  @@index([payrollPeriodId])
+  @@index([payrollRunDate])
+  @@map("payouts")
+}
+
+model Employee {
+  id                    String    @id @default(cuid())
+  orgId                 String
+  companyId             String
+  userId                String    @unique
+  houseId               String?
+  employeeCode          String    @unique
+  firstName             String
+  lastName              String
+  email                 String    @unique
+  phone                 String?   @db.VarChar(30)
+  ssnLast4              String?   @db.VarChar(4)
+  dob                   DateTime?
+  gender                String?   @db.VarChar(10)
+  race                  String?   @db.VarChar(50)
+  hireDate              DateTime
+  terminationDate       DateTime?
+  positionTitle         String?
+  accessLevel           String?   @default("normal")
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  enrollmentStatus      String    @default("unenrolled")
+  status                String    @default("active")
+  photoUrl              String?
+  notes                 String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  org                Organization        @relation(fields: [orgId], references: [id])
+  company            Company             @relation(fields: [companyId], references: [id])
+  house              House?              @relation(fields: [houseId], references: [id])
+  user               User                @relation(fields: [userId], references: [id])
+  payrollPeriods     PayrollPeriod[]
+  workSchedules      WorkSchedule[]
+  timesheets         Timesheet[]
+  certifications     Certification[]
+  documents          Document[]
+  benefitEnrollments BenefitEnrollment[]
+  auditLogs          AuditLog[]
+  Attendance         Attendance[]
+  Jobs               Jobs[]
+  Approval           Approval[]
+  Shift              Shift[]
+  Payment            Payment[]
+  TaxRecord          TaxRecord[]
+  W2                 W2[]
+  Paycheck           Paycheck[]
+
+  @@index([orgId])
+  @@index([companyId])
+  @@index([houseId])
+  @@index([enrollmentStatus])
+  @@index([status])
+  @@map("employees")
+}
+
+model Employer {
+  id                   String            @id @default(cuid())
+  orgId                String
+  companyId            String
+  employerId           String            @unique
+  code                 String?           @unique
+  name                 String
+  taxId                String?           @db.VarChar(20)
+  address1             String
+  city                 String
+  state                String
+  postalCode           String
+  country              String            @default("US")
+  phone                String?
+  email                String?
+  website              String?
+  payrollAccountNumber String?           @unique
+  settings             Json?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  org                  Organization      @relation(fields: [orgId], references: [id])
+  company              Company           @relation(fields: [companyId], references: [id])
+  accounts             EmployerAccount[]
+  auditLogs            AuditLog[]
+  Contractor           Contractor[]
+  Payment              Payment[]
+  TaxRecord            TaxRecord[]
+  TaxReport            TaxReport[]
+  W2                   W2[]
+  Ten9289              Ten9289[]
+
+  @@index([orgId])
+  @@index([companyId])
+  @@index([employerId])
+  @@map("employers")
+}
+
+model EmployerAccount {
+  id            String   @id @default(cuid())
+  employerId    String
+  orgId         String
+  type          String
+  provider      String
+  accountNumber String
+  routingNumber String
+  bankName      String?
+  accountType   String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  employer Employer     @relation(fields: [employerId], references: [id])
+  org      Organization @relation(fields: [orgId], references: [id])
+
+  @@index([employerId])
+  @@index([orgId])
+  @@map("employer_accounts")
+}
+
+// ---------------------------------------------------------------------------
+// PEOPLE / EMPLOYER / EMPLOYEE
+// ---------------------------------------------------------------------------
+model User {
+  id              String    @id @default(cuid())
+  orgId           String
+  companyId       String
+  email           String    @unique
+  emailVerifiedAt DateTime?
+  passwordHash    String?
+  name            String
+  firstName       String
+  lastName        String
+  phone           String?   @db.VarChar(30)
+  photoUrl        String?
+  role            String    @default("employee")
+  status          String    @default("active")
+  mfaEnabled      Boolean   @default(false)
+  mfaSecret       String?
+  lastLoginAt     DateTime?
+  lastActivityAt  DateTime?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  org             Organization     @relation(fields: [orgId], references: [id])
+  company         Company          @relation(fields: [companyId], references: [id])
+  accounts        UserAccount[]
+  employee        Employee?
+  auditLogs       AuditLog[]
+  notifications   Notification[]
+  approvals       Approval[]
+  documents       Document[]
+  signatures      Signature[]
+  aiConversations AiConversation[]
+
+  @@index([orgId])
+  @@index([companyId])
+  @@index([email])
+  @@index([status])
+  @@index([role])
+  @@index([isActive])
+  @@map("users")
+}
+
+model UserAccount {
+  id                    String    @id @default(cuid())
+  userId                String
+  orgId                 String
+  type                  String
+  provider              String
+  providerAccountId     String
+  email                 String?
+  passwordHash          String?
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  sessionState          String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User         @relation(fields: [userId], references: [id])
+  org  Organization @relation(fields: [orgId], references: [id])
+
+  @@index([userId])
+  @@index([orgId])
+  @@map("user_accounts")
+}
+
+// ============================================================
+// HCR DSP SCHEDULING & PAYROLL PLATFORM — Prisma Schema
+// Multi-tenant SaaS: org_id on every tenant-scoped row
+// Generated: v0.1.0
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// SECRET / SENSITIVE CONFIG (database-level)
+// ---------------------------------------------------------------------------
+model Secret {
+  id        String   @id @default(cuid())
+  orgId     String
+  tenant    String
+  key       String // encrypted at rest
+  value     String // encrypted at rest
+  kind      String // "API_KEY", "PAYMENT_ACCT", "OAUTH_CLIENT", "MFA_SECRET"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([orgId, tenant, key])
+  @@index([orgId])
+}
+
+// ---------------------------------------------------------------------------
+// TENANCY / ORGANIZATIONAL
+// ---------------------------------------------------------------------------
+model Organization {
+  id           String   @id @default(cuid())
+  legalName    String
+  dbName       String   @unique // e.g. "hcr"
+  bannerColor  String?  @default("#0a97a0")
+  logoUrl      String?
+  coverImgUrl  String?
+  tosUrl       String?
+  privacyUrl   String?
+  registeredAt DateTime @default(now())
+  active       Boolean  @default(true)
+  isDemo       Boolean  @default(false)
+
+  companies       Company[]
+  employees       Employee[]
+  payrollPeriod   PayrollPeriod[]
+  users           User[]
+  programs        Program[]
+  houses          House[]
+  Department      Department[]
+  Holiday         Holiday[]
+  Integration     Integration[]
+  Webhook         Webhook[]
+  ReportRequest   ReportRequest[]
+  WorkflowRule    WorkflowRule[]
+  PromptTemplate  PromptTemplate[]
+  Document        Document[]
+  Contractor      Contractor[]
+  Benefit         Benefit[]
+  Payout          Payout[]
+  Employer        Employer[]
+  EmployerAccount EmployerAccount[]
+  UserAccount     UserAccount[]
+
+  @@index([registeredAt])
+  @@map("organizations")
+}
+
+model Company {
+  id            String       @id @default(cuid())
+  orgId         String
+  name          String
+  code          String       @unique // external join code (854f9453...)
+  address1      String
+  address2      String?
+  city          String
+  state         String
+  postalCode    String
+  country       String       @default("US")
+  phone         String?
+  website       String?
+  industry      String?
+  onboardingUrl String?
+  settings      Json?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  org           Organization @relation(fields: [orgId], references: [id])
+
+  employees     Employee[]
+  payrollPeriod PayrollPeriod[]
+  shifts        Shift[]
+  jobs          Jobs[]
+  programs      Program[]
+  documents     Document[]
+  Department    Department[]
+  Holiday       Holiday[]
+  Contractor    Contractor[]
+  Benefit       Benefit[]
+  Timesheet     Timesheet[]
+  Employer      Employer[]
+  User          User[]
+  House         House[]
+
+  @@index([orgId])
+  @@index([name])
+  @@map("companies")
+}
+
+model House {
+  id            String          @id @default(cuid())
+  orgId         String
+  companyId     String
+  name          String
+  code          String          @unique
+  address1      String
+  address2      String?
+  city          String
+  state         String
+  postalCode    String
+  country       String          @default("US")
+  phone         String?
+  email         String?
+  managerName   String?
+  managerPhone  String?
+  settings      Json?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  org           Organization    @relation(fields: [orgId], references: [id])
+  company       Company         @relation(fields: [companyId], references: [id])
+  programs      Program[]
+  shifts        Shift[]
+  Department    Department[]
+  Holiday       Holiday[]
+  Document      Document[]
+  Benefit       Benefit[]
+  Timesheet     Timesheet[]
+  PayrollPeriod PayrollPeriod[]
+  Employee      Employee[]
+
+  @@index([orgId])
+  @@index([companyId])
+  @@map("houses")
+}
+
+// ---------------------------------------------------------------------------
+// BILLING
+// ---------------------------------------------------------------------------
+model Billing {
+  id                       String    @id @default(cuid())
+  orgId                    String
+  accountId                String?
+  paymentMethodId          String?
+  amount                   Decimal
+  currency                 String    @default("USD")
+  status                   String    @default("pending")
+  paymentMethodType        String?
+  paymentNetwork           String?
+  transactionId            String?
+  providerId               String?
+  providerName             String?
+  deductibleAmount         Decimal?
+  marketplaceRebate        Decimal?
+  providerRebate           Decimal?
+  providerRemittance       Decimal?
+  providerRemittanceMethod String?
+  paymentDue               DateTime?
+  paymentPostedAt          DateTime?
+  payeeId                  String?
+  arpAmount                Decimal?
+  arpInvoiceDate           DateTime?
+  arpDocType               String?
+  disbursementDate         DateTime?
+  disbursementId           String?
+  disbursementType         String?
+  disbursementDesc         String?
+  disbursementCheckNumber  String?
+  txnDate                  DateTime?
+  txnMessage               String?
+  isReversed               Boolean   @default(false)
+  reversalReason           String?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  @@index([orgId])
+  @@index([status])
+  @@map("billing")
+}

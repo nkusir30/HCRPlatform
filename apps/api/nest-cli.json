@@ -1,0 +1,12 @@
+{
+  "compiler": {
+    "module": "ts-node",
+    "transpileOnly": true,
+    "esm": true
+  },
+  "inputs": ["src/**/*.ts"],
+  "outputs": ["dist"],
+  "assets": ["src/**/*.md"],
+  "watchAssets": true,
+  "logger": "nest"
+}
