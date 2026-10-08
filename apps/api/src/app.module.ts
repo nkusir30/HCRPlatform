@@ -23,6 +23,7 @@ import { AiMessageModule } from './ai-chat/ai-message.module';
 import { WebhookModule } from './webhooks/webhook.module';
 import { DatabaseModule } from './database/database.module';
 import { CommonModule } from './common/common.module';
+import { MemoryModule } from './memory/memory.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { CommonModule } from './common/common.module';
     WebhookModule,
     DatabaseModule,
     CommonModule,
+    MemoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
