@@ -21,7 +21,6 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 RUN npm run build
 
 ENV NODE_ENV=production
-ENV PORT=3000
-EXPOSE 3000
-
-CMD ["sh", "-c", "npx --no-install next start -p ${PORT:-3000}"]
+# Do NOT hardcode PORT: Render injects $PORT and expects the app to bind it.
+# CMD falls back to 3000 only for local docker runs.
+CMD ["sh", "-c", "./node_modules/.bin/next start -H 0.0.0.0 -p ${PORT:-3000}"]
