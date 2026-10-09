@@ -1,6 +1,6 @@
-// HCRPlatform web service — Render Docker build.
-// dockerContext = repo root (contents of hcr-platform/), so paths are relative
-// to that root: apps/web/*, etc.
+# HCRPlatform web service — Render Docker build.
+# dockerContext = repo root (contents of hcr-platform/), so paths are relative
+# to that root: apps/web/*, etc.
 FROM node:20-alpine AS base
 WORKDIR /app/apps/web
 
