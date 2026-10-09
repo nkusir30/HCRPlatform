@@ -6,16 +6,20 @@ import { queryClient } from '@/lib/query-client';
 import { StoreProvider } from '@/providers/store-provider';
 import { AuthProvider } from '@/providers/auth-provider';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { AppStoreProvider } from '@/lib/app-store';
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ReactQueryDevtools initialIsOpen={false} />
-      <StoreProvider>
-        <AuthProvider>
-          <SidebarProvider>{children}</SidebarProvider>
-        </AuthProvider>
-      </StoreProvider>
+      <AppStoreProvider>
+        <StoreProvider>
+          <AuthProvider>
+            <SidebarProvider>{children}</SidebarProvider>
+          </AuthProvider>
+        </StoreProvider>
+      </AppStoreProvider>
     </QueryClientProvider>
   );
 }
+
