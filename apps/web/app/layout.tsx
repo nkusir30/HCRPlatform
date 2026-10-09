@@ -1,11 +1,6 @@
 import type { Metadata } from 'next';
 import '@/styles/global.css';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { queryClient } from '@/lib/query-client';
-import { StoreProvider } from '@/providers/store-provider';
-import { AuthProvider } from '@/providers/auth-provider';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { ClientProviders } from './providers';
 
 export const metadata: Metadata = {
   title: { default: 'Home Care Residential — Payroll & HR SaaS', template: '%s | HCR' },
@@ -21,18 +16,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <QueryClientProvider client={queryClient}>
-          <ReactQueryDevtools initialIsOpen={false} />
-          <StoreProvider>
-            <AuthProvider>
-              <SidebarProvider>
-                <main className="flex-1 min-h-screen bg-bg-base">
-                  {children}
-                </main>
-              </SidebarProvider>
-            </AuthProvider>
-          </StoreProvider>
-        </QueryClientProvider>
+        <ClientProviders>
+          <main className="flex-1 min-h-screen bg-bg-base">
+            {children}
+          </main>
+        </ClientProviders>
       </body>
     </html>
   );

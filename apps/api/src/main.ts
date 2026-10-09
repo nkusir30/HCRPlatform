@@ -43,8 +43,8 @@ async function bootstrap() {
   // --- Health check endpoint ---
   app.enableShutdownHooks();
 
-  const port = process.env.APP_PORT || 4000;
-  await app.listen(port);
+  const port = Number(process.env.PORT || process.env.APP_PORT || 4000);
+  await app.listen(port, '0.0.0.0');
   console.log(`HCR API running on http://localhost:${port}`);
   console.log(`API docs: http://localhost:${port}/api/docs`);
   console.log(`Swagger: http://localhost:${port}/api/docs-json`);
