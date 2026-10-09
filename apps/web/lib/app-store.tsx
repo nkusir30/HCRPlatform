@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import type { AppState, Session, Employee, Schedule, Timesheet, Report } from './types';
+import type { AppState, Session, Employee, Schedule, Timesheet, Report, House, Program, Account } from './types';
 import { seedState } from './seed';
 
 const STORAGE_KEY = 'hcr_app_state_v1';
@@ -21,7 +21,14 @@ function load(): AppState {
     if (raw) {
       const parsed = JSON.parse(raw) as AppState;
       // Basic shape guard so a stale/partial blob can't crash the app.
-      if (parsed && Array.isArray(parsed.employees) && Array.isArray(parsed.schedules)) {
+      if (
+        parsed &&
+        Array.isArray(parsed.employees) &&
+        Array.isArray(parsed.schedules) &&
+        Array.isArray(parsed.houses) &&
+        Array.isArray(parsed.accounts) &&
+        Array.isArray(parsed.programs)
+      ) {
         return parsed;
       }
     }
@@ -40,10 +47,13 @@ function newId(prefix: string) {
 interface AppStore extends AppState {
   hydrated: boolean;
   login: (email: string, password: string) => { ok: boolean; error?: string };
+  signup: (input: { name: string; email: string; password: string; role: Session['role'] }) => { ok: boolean; error?: string };
   logout: () => void;
   addEmployee: (e: Omit<Employee, 'id'>) => void;
   updateEmployee: (id: string, patch: Omit<Employee, 'id'>) => void;
   deleteEmployee: (id: string) => void;
+  addHouse: (h: Omit<House, 'id'>) => void;
+  addProgram: (p: Omit<Program, 'id'>) => void;
   addSchedule: (s: Omit<Schedule, 'id'>) => void;
   addTimesheet: (t: Omit<Timesheet, 'id'>) => void;
   addReport: (r: Omit<Report, 'id' | 'reportId' | 'createdAt' | 'status'>) => void;
@@ -76,16 +86,37 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     ...state,
     hydrated,
     login(email, password) {
-      const match = DEMO_ACCOUNTS.find((a) => a.email.toLowerCase() === email.trim().toLowerCase());
-      if (!match) return { ok: false, error: 'No account found for that email.' };
-      if (password !== DEMO_PASSWORD) return { ok: false, error: 'Incorrect password.' };
+      const account = state.accounts.find(
+        (a) => a.email.toLowerCase() === email.trim().toLowerCase(),
+      );
+      if (!account) return { ok: false, error: 'No account found for that email.' };
+      if (account.password !== password) return { ok: false, error: 'Incorrect password.' };
       const session: Session = {
-        email: match.email,
-        name: match.name,
-        role: match.role,
+        email: account.email,
+        name: account.name,
+        role: account.role,
         orgId: state.orgId,
       };
       setState((s) => ({ ...s, session }));
+      return { ok: true };
+    },
+    signup(input) {
+      const email = input.email.trim().toLowerCase();
+      if (!input.name.trim()) return { ok: false, error: 'Please enter your name.' };
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok: false, error: 'Enter a valid email address.' };
+      if (input.password.length < 8) return { ok: false, error: 'Password must be at least 8 characters.' };
+      if (state.accounts.some((a) => a.email.toLowerCase() === email)) {
+        return { ok: false, error: 'An account with that email already exists.' };
+      }
+      const account: Account = {
+        id: newId('clxusr'),
+        name: input.name.trim(),
+        email,
+        password: input.password,
+        role: input.role,
+      };
+      const session: Session = { email: account.email, name: account.name, role: account.role, orgId: state.orgId };
+      setState((s) => ({ ...s, accounts: [...s.accounts, account], session }));
       return { ok: true };
     },
     logout() {
@@ -93,6 +124,12 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     },
     addEmployee(e) {
       setState((s) => ({ ...s, employees: [{ ...e, id: newId('clxemp') }, ...s.employees] }));
+    },
+    addHouse(h) {
+      setState((s) => ({ ...s, houses: [{ ...h, id: newId('clxhouse') }, ...s.houses] }));
+    },
+    addProgram(p) {
+      setState((s) => ({ ...s, programs: [{ ...p, id: newId('clxprg') }, ...s.programs] }));
     },
     updateEmployee(id, patch) {
       setState((s) => ({

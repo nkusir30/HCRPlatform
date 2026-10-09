@@ -77,14 +77,48 @@ export interface Report {
 
 export interface House {
   id: string;
+  companyId: string;
   name: string;
+  code: string;
+  address1: string;
+  address2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone?: string;
+  email?: string;
+  managerName?: string;
+  managerPhone?: string;
+}
+
+export interface Program {
+  id: string;
+  companyId: string;
+  houseId?: string;
+  programId: string;
+  name: string;
+  code: string;
+  description?: string;
+  active: boolean;
+}
+
+// A user account registered via the signup form (client-side demo auth).
+export interface Account {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  role: Role;
 }
 
 export interface AppState {
   session: Session | null;
   orgId: string;
   companyId: string;
+  accounts: Account[];
   houses: House[];
+  programs: Program[];
   employees: Employee[];
   schedules: Schedule[];
   timesheets: Timesheet[];

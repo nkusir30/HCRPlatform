@@ -2,15 +2,97 @@
 // Ids are cuid-like strings so they survive being used as React keys and look
 // consistent with what the real API returns. This data lives client-side only;
 // swapping to the live API later means replacing the store's initial state.
-import type { AppState, Employee, Schedule, Timesheet, Report, House } from './types';
+import type { AppState, Employee, Schedule, Timesheet, Report, House, Program, Account } from './types';
 
 export const ORG_ID = 'clxorg0001hcrplatformdemo';
 export const COMPANY_ID = 'clxco00001hcrplatformdemo';
 
 export const HOUSES: House[] = [
-  { id: 'clxhouse01hcrplatformdemo', name: 'Maple House' },
-  { id: 'clxhouse02hcrplatformdemo', name: 'Cedar House' },
-  { id: 'clxhouse03hcrplatformdemo', name: 'Birch House' },
+  {
+    id: 'clxhouse01hcrplatformdemo',
+    companyId: COMPANY_ID,
+    name: 'Maple House',
+    code: 'MAPLE',
+    address1: '123 Maple St',
+    city: 'Sacramento',
+    state: 'CA',
+    postalCode: '95814',
+    country: 'USA',
+    phone: '9165550110',
+    email: 'maple@hrv-homes.com',
+    managerName: 'Maria Santos',
+    managerPhone: '9165550177',
+  },
+  {
+    id: 'clxhouse02hcrplatformdemo',
+    companyId: COMPANY_ID,
+    name: 'Cedar House',
+    code: 'CEDAR',
+    address1: '456 Cedar Ave',
+    city: 'Sacramento',
+    state: 'CA',
+    postalCode: '95818',
+    country: 'USA',
+    phone: '9165550120',
+    email: 'cedar@hrv-homes.com',
+    managerName: 'James Wilson',
+    managerPhone: '9165550178',
+  },
+  {
+    id: 'clxhouse03hcrplatformdemo',
+    companyId: COMPANY_ID,
+    name: 'Birch House',
+    code: 'BIRCH',
+    address1: '789 Birch Ln',
+    city: 'Roseville',
+    state: 'CA',
+    postalCode: '95661',
+    country: 'USA',
+    phone: '9165550130',
+    email: 'birch@hrv-homes.com',
+    managerName: 'Aisha Khan',
+    managerPhone: '9165550179',
+  },
+];
+
+// Registered accounts (client-side demo auth). These mirror the demo logins so
+// signup validation can prevent duplicates, and let users add their own.
+export const ACCOUNTS: Account[] = [
+  { id: 'clxusr0001hcrplatformdemo', name: 'Demo Admin', email: 'admin@hrv-homes.com', password: 'Dem0Demo123!', role: 'admin' },
+  { id: 'clxusr0002hcrplatformdemo', name: 'Program Director', email: 'director@hrv-homes.com', password: 'Dem0Demo123!', role: 'super_admin' },
+  { id: 'clxusr0003hcrplatformdemo', name: 'Maria Garcia', email: 'maria.garcia@hrv-homes.com', password: 'Dem0Demo123!', role: 'employee' },
+];
+
+export const PROGRAMS: Program[] = [
+  {
+    id: 'clxprg0001hcrplatformdemo',
+    companyId: COMPANY_ID,
+    houseId: HOUSES[0].id,
+    programId: 'PRG-2026-RCFE',
+    name: 'Residential Care (RCFE)',
+    code: 'RCFE',
+    description: '24-hour residential care facility for elderly',
+    active: true,
+  },
+  {
+    id: 'clxprg0002hcrplatformdemo',
+    companyId: COMPANY_ID,
+    houseId: HOUSES[1].id,
+    programId: 'PRG-2026-ALZ',
+    name: 'Alzheimer’s & Dementia Care',
+    code: 'ALZ',
+    description: 'Specialized memory care unit',
+    active: true,
+  },
+  {
+    id: 'clxprg0003hcrplatformdemo',
+    companyId: COMPANY_ID,
+    programId: 'PRG-2026-HOSP',
+    name: 'Hospice Support',
+    code: 'HOSPICE',
+    description: 'End-of-life palliative support program',
+    active: false,
+  },
 ];
 
 export const PAYROLL_PERIOD_ID = 'clxpp000001hcrplatformdemo';
@@ -179,7 +261,9 @@ export function seedState(): AppState {
     session: null,
     orgId: ORG_ID,
     companyId: COMPANY_ID,
+    accounts: ACCOUNTS,
     houses: HOUSES,
+    programs: PROGRAMS,
     employees: EMPLOYEES,
     schedules: SCHEDULES,
     timesheets: TIMESHEETS,
