@@ -41,6 +41,8 @@ interface AppStore extends AppState {
   login: (email: string, password: string) => { ok: boolean; error?: string };
   logout: () => void;
   addEmployee: (e: Omit<Employee, 'id'>) => void;
+  updateEmployee: (id: string, patch: Omit<Employee, 'id'>) => void;
+  deleteEmployee: (id: string) => void;
   addSchedule: (s: Omit<Schedule, 'id'>) => void;
   addTimesheet: (t: Omit<Timesheet, 'id'>) => void;
   addReport: (r: Omit<Report, 'id' | 'reportId' | 'createdAt' | 'status'>) => void;
@@ -81,6 +83,21 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     },
     addEmployee(e) {
       setState((s) => ({ ...s, employees: [{ ...e, id: newId('clxemp') }, ...s.employees] }));
+    },
+    updateEmployee(id, patch) {
+      setState((s) => ({
+        ...s,
+        employees: s.employees.map((emp) => (emp.id === id ? { ...emp, ...patch, id } : emp)),
+      }));
+    },
+    deleteEmployee(id) {
+      setState((s) => ({
+        ...s,
+        employees: s.employees.filter((emp) => emp.id !== id),
+        // Keep referential integrity: drop schedules/timesheets that point at the removed employee.
+        schedules: s.schedules.filter((sch) => sch.employeeId !== id),
+        timesheets: s.timesheets.filter((t) => t.employeeId !== id),
+      }));
     },
     addSchedule(sh) {
       setState((s) => ({ ...s, schedules: [{ ...sh, id: newId('clxsch') }, ...s.schedules] }));
