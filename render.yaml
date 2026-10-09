@@ -1,0 +1,50 @@
+# Render blueprint for the HCR platform preview.
+# Uses your EXISTING Render Postgres (hcr_platform_scheduler /
+# dpg-db3v82142hec73f6hqpg-a) — no new database is created here.
+#
+# Deploy:
+#   1. Push this repo to GitHub.
+#   2. Render Dashboard -> New -> Blueprint -> select this repo.
+#      (render.yaml at repo root points into apps/.)
+#   3. When prompted, paste your External Database URL as DATABASE_URL
+#      (already migrated: 0001_init applied 2026-10-09).
+#   4. Set JWT_SECRET (generate: node scripts/gen-jwt-secret.js).
+#
+# After deploy: API at https://hcr-api.onrender.com/api, web at https://hcr-web.onrender.com
+
+services:
+  - type: web
+    name: hcr-api
+    runtime: docker
+    dockerfilePath: apps/api/Dockerfile
+    dockerContext: .
+    plan: starter
+    healthCheckPath: /api
+    envVars:
+      - key: DATABASE_URL
+        sync: false # paste External URL + ?schema=public (existing DB dpg-db3v82142hec73f6hqpg-a)
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: NODE_ENV
+        value: production
+      - key: APP_PORT
+        value: 4000
+      - key: WEB_URL
+        # Update to your real web URL after first deploy (needs protocol for CORS).
+        value: https://hcr-web.onrender.com
+
+  - type: web
+    name: hcr-web
+    runtime: docker
+    dockerfilePath: apps/web/Dockerfile
+    dockerContext: .
+    plan: starter
+    healthCheckPath: /
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        # Baked into the Next.js build; must include protocol + /api suffix.
+        value: https://hcr-api.onrender.com/api
+      - key: NODE_ENV
+        value: production
