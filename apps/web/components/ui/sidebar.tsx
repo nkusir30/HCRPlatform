@@ -40,3 +40,7 @@ export const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
   ),
 );
 Sidebar.displayName = 'Sidebar';
+
+export function SidebarProvider({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}

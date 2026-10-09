@@ -11,3 +11,8 @@ export const useStore = create<StoreState>((set) => ({
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
   closeSidebar: () => set({ sidebarOpen: false }),
 }));
+
+export function StoreProvider({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
+

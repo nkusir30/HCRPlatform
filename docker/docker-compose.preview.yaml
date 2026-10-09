@@ -1,10 +1,8 @@
-# Local development stack for hcr-platform.
-# Postgres + Redis only. The api and web services are started from source on
-# the host (see hcr-platform/docker/README.md), because neither has a Dockerfile.
-# Example:
-#   docker compose up -d db redis
-#   npx prisma migrate deploy
-#   npm run start:dev
+# Local preview stack for hcr-platform: Postgres + Redis only.
+# The api/web services are started from source (pnpm --filter api dev) because
+# they have no Dockerfiles. See hcr-platform/docker/README.
+name: hcr-preview
+
 services:
   db:
     image: postgres:16
@@ -18,7 +16,7 @@ services:
     volumes:
       - hcr_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U hcr -d hcr" ]
+      test: ["CMD-SHELL", "pg_isready -U hcr -d hcr"]
       interval: 5s
       timeout: 5s
       retries: 20

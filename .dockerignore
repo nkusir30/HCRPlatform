@@ -1,0 +1,10 @@
+# Docker build context hygiene for the HCRPlatform web service.
+# Keeps the build context small and never leaks local state into the image.
+**/node_modules
+**/.next
+**/.git
+**/.env
+**/.env.*
+*.log
+tmp/
+temp/

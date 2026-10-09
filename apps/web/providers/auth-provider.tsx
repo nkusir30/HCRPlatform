@@ -1,7 +1,6 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useStore } from './store-provider';
 
 interface AuthContextType {
   user: { name: string; email: string; role: string } | null;

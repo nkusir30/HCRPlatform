@@ -1,8 +1,8 @@
 import 'reflect-metadata';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service';
 
-jest.mock('bcrypt', () => ({ compare: jest.fn(), hash: jest.fn() }));
+jest.mock('bcryptjs', () => ({ compare: jest.fn(), hash: jest.fn() }));
 
 describe('AuthService', () => {
   const user = {
