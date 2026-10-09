@@ -6,17 +6,17 @@ import { useApp, DEMO_ACCOUNTS, DEMO_PASSWORD } from '@/lib/app-store';
 import { Field, TextInput, Alert } from '@/components/form';
 
 export default function LoginPage() {
-  const { login, session } = useApp();
+  const { login, session, hydrated } = useApp();
   const router = useRouter();
   const [email, setEmail] = useState('admin@hrv-homes.com');
   const [password, setPassword] = useState(DEMO_PASSWORD);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // Already signed in? Go straight to the dashboard.
-  if (session) {
-    router.replace('/dashboard');
-  }
+  // Already signed in? Go straight to the dashboard (after hydration).
+  useEffect(() => {
+    if (hydrated && session) router.replace('/dashboard');
+  }, [hydrated, session, router]);
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,6 +29,16 @@ export default function LoginPage() {
     } else {
       setError(res.error ?? 'Login failed.');
     }
+  }
+
+  // While hydrating (or already logged in and about to redirect), show a neutral
+  // state that matches the server render to avoid a hydration mismatch.
+  if (!hydrated || session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-8 text-[var(--color-text-secondary)]">
+        Loading…
+      </div>
+    );
   }
 
   return (

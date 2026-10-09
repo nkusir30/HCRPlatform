@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/app-store';
 
 export default function HomePage() {
-  const { session } = useApp();
+  const { session, hydrated } = useApp();
   const router = useRouter();
 
   useEffect(() => {
-    router.replace(session ? '/dashboard' : '/login');
-  }, [session, router]);
+    if (hydrated) router.replace(session ? '/dashboard' : '/login');
+  }, [hydrated, session, router]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8">

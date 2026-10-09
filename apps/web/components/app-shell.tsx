@@ -14,15 +14,23 @@ const NAV = [
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { session, logout } = useApp();
+  const { session, hydrated, logout } = useApp();
   const pathname = usePathname();
   const router = useRouter();
 
-  // Guard: bounce to /login when there is no session (after mount, to avoid
-  // hydration mismatch — session lives in localStorage).
+  // Until the client has read localStorage, render a neutral state that matches
+  // the server (no session) so hydration succeeds. Then enforce the auth guard.
   useEffect(() => {
-    if (!session && pathname !== '/login') router.replace('/login');
-  }, [session, pathname, router]);
+    if (hydrated && !session && pathname !== '/login') router.replace('/login');
+  }, [hydrated, session, pathname, router]);
+
+  if (!hydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-8 text-[var(--color-text-secondary)]">
+        Loading…
+      </div>
+    );
+  }
 
   if (!session) {
     return (

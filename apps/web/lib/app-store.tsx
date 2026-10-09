@@ -38,6 +38,7 @@ function newId(prefix: string) {
 }
 
 interface AppStore extends AppState {
+  hydrated: boolean;
   login: (email: string, password: string) => { ok: boolean; error?: string };
   logout: () => void;
   addEmployee: (e: Omit<Employee, 'id'>) => void;
@@ -54,6 +55,14 @@ const Ctx = createContext<AppStore | null>(null);
 
 export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(() => load());
+  // The store reads from localStorage, which only exists in the browser. The
+  // first client render must match the server render (no session) to avoid a
+  // hydration mismatch, so we gate session-dependent UI on this flag.
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   useEffect(() => {
     try {
@@ -65,6 +74,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
   const store: AppStore = {
     ...state,
+    hydrated,
     login(email, password) {
       const match = DEMO_ACCOUNTS.find((a) => a.email.toLowerCase() === email.trim().toLowerCase());
       if (!match) return { ok: false, error: 'No account found for that email.' };
