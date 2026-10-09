@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 280" role="img" aria-label="Home Care Residential, LLC">
+  <defs>
+    <path id="hcr-arc-top" d="M 32,140 A 108,108 0 0 1 248,140" fill="none"/>
+    <path id="hcr-arc-bottom" d="M 32,140 A 108,108 0 0 0 248,140" fill="none"/>
+  </defs>
+
+  <!-- Circular wordmark -->
+  <g fill="#111111" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="20" letter-spacing="0.3">
+    <text>
+      <textPath href="#hcr-arc-top" startOffset="50%" text-anchor="middle">Home Care Residential, LLC</textPath>
+    </text>
+    <text>
+      <textPath href="#hcr-arc-bottom" startOffset="50%" text-anchor="middle">Home Care Residential, LLC</textPath>
+    </text>
+  </g>
+
+  <!-- Side dots -->
+  <circle cx="10" cy="140" r="5" fill="#111111"/>
+  <circle cx="270" cy="140" r="5" fill="#111111"/>
+
+  <!-- House -->
+  <g fill="#111111">
+    <!-- Main roof chevron -->
+    <path d="M74 146 L136 96 L198 146 L184 146 L136 107 L88 146 Z"/>
+    <!-- Main block (two stories) -->
+    <rect x="94" y="146" width="84" height="62"/>
+    <!-- Right wing roof -->
+    <path d="M180 152 L202 132 L226 132 L226 140 L208 140 L188 156 Z"/>
+    <!-- Right wing body -->
+    <rect x="188" y="154" width="32" height="54"/>
+  </g>
+  <!-- Window / door cutouts -->
+  <g fill="#ffffff">
+    <rect x="104" y="154" width="22" height="18"/>
+    <rect x="142" y="154" width="22" height="18"/>
+    <rect x="104" y="182" width="22" height="16"/>
+    <rect x="148" y="180" width="16" height="28"/>
+    <rect x="196" y="166" width="16" height="16"/>
+  </g>
+</svg>

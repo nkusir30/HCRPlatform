@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 281" role="img" aria-label="Home Care Residential, LLC — Home Is Where We Are Safe And Loved.">
+  <defs>
+    <path id="lock-arc-top" d="M 32,140 A 108,108 0 0 1 248,140" fill="none"/>
+    <path id="lock-arc-bottom" d="M 32,140 A 108,108 0 0 0 248,140" fill="none"/>
+  </defs>
+
+  <!-- Circular badge -->
+  <g fill="#111111" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="20" letter-spacing="0.3">
+    <text>
+      <textPath href="#lock-arc-top" startOffset="50%" text-anchor="middle">Home Care Residential, LLC</textPath>
+    </text>
+    <text>
+      <textPath href="#lock-arc-bottom" startOffset="50%" text-anchor="middle">Home Care Residential, LLC</textPath>
+    </text>
+  </g>
+  <circle cx="10" cy="140" r="5" fill="#111111"/>
+  <circle cx="270" cy="140" r="5" fill="#111111"/>
+
+  <!-- House -->
+  <g fill="#111111">
+    <path d="M74 146 L136 96 L198 146 L184 146 L136 107 L88 146 Z"/>
+    <rect x="94" y="146" width="84" height="62"/>
+    <path d="M180 152 L202 132 L226 132 L226 140 L208 140 L188 156 Z"/>
+    <rect x="188" y="154" width="32" height="54"/>
+  </g>
+  <g fill="#ffffff">
+    <rect x="104" y="154" width="22" height="18"/>
+    <rect x="142" y="154" width="22" height="18"/>
+    <rect x="104" y="182" width="22" height="16"/>
+    <rect x="148" y="180" width="16" height="28"/>
+    <rect x="196" y="166" width="16" height="16"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="310" y="150" fill="#111111" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-style="italic" font-size="64" textLength="596" lengthAdjust="spacingAndGlyphs">Home Care Residential, LLC</text>
+
+  <!-- Tagline -->
+  <text x="313" y="200" fill="#111111" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="28" textLength="392" lengthAdjust="spacingAndGlyphs">Home Is Where We Are Safe And Loved.</text>
+</svg>

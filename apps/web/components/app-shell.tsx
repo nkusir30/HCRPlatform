@@ -47,9 +47,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className="md:w-64 bg-[var(--color-bg-elevated)] border-b md:border-b-0 md:border-r border-[var(--color-border)] md:min-h-screen">
         <div className="p-5 border-b border-[var(--color-border)]">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">🏠</span>
+            <img src="/hcr-mark.svg" alt="" className="h-9 w-9 shrink-0" />
             <div>
-              <div className="font-semibold">HCR Platform</div>
+              <div className="font-semibold">Home Care Residential</div>
               <div className="text-xs text-[var(--color-text-muted)]">Scheduling &amp; Payroll</div>
             </div>
           </div>

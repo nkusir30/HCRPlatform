@@ -65,8 +65,11 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-6 bg-bg-base">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">🏠</div>
-          <h1 className="text-2xl font-semibold">Home Care Residential</h1>
+          <img
+            src="/hcr-logo.svg"
+            alt="Home Care Residential, LLC — Home Is Where We Are Safe And Loved."
+            className="mx-auto mb-4 w-full max-w-sm"
+          />
           <p className="text-[var(--color-text-secondary)] mt-1">
             {mode === 'signin' ? 'Sign in to the scheduling platform' : 'Create your account'}
           </p>
