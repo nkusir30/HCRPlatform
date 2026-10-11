@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/lib/app-store';
+import type { Attendance } from '@/lib/types';
 import { AttendanceClock } from '@/components/attendance-clock';
 import { formatClock, formatDuration } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -10,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/form';
 
 export default function AttendancePage() {
-  const { session, employees, attendance } = useApp();
+  const { session, employees, schedules, houses, attendance } = useApp();
 
   // Non-employees see the whole org; an employee sees only their own punches.
   const isEmployee = session?.role === 'employee';
@@ -23,6 +24,23 @@ export default function AttendancePage() {
   const empName = (id: string) => {
     const e = employees.find((x) => x.id === id);
     return e ? `${e.firstName} ${e.lastName}` : id.slice(0, 8);
+  };
+
+  // House for a punch: the snapshot taken at clock-in, else the house of the
+  // shift the punch was recorded against, else the one house all of the
+  // employee's shifts point at (their assigned house). "—" when none applies
+  // (e.g. an unscheduled punch from someone who works multiple houses).
+  const houseName = (r: Attendance): string => {
+    const byId = (id?: string) => (id ? houses.find((h) => h.id === id)?.name : undefined);
+    return (
+      byId(r.houseId) ??
+      byId(schedules.find((s) => s.id === r.scheduleId)?.houseId) ??
+      (() => {
+        const empHouses = [...new Set(schedules.filter((s) => s.employeeId === r.employeeId).map((s) => s.houseId))];
+        return empHouses.length === 1 ? byId(empHouses[0]) : undefined;
+      })() ??
+      '—'
+    );
   };
 
   const rows = useMemo(() => {
@@ -58,6 +76,7 @@ export default function AttendancePage() {
                 <tr className="text-left text-[var(--color-text-secondary)] border-b border-[var(--color-border)]">
                   <th className="py-2 pr-4 font-medium">Date</th>
                   {!isEmployee ? <th className="py-2 pr-4 font-medium">Employee</th> : null}
+                  <th className="py-2 pr-4 font-medium">House</th>
                   <th className="py-2 pr-4 font-medium">Clock in</th>
                   <th className="py-2 pr-4 font-medium">Clock out</th>
                   <th className="py-2 pr-4 font-medium">Duration</th>
@@ -70,6 +89,7 @@ export default function AttendancePage() {
                   <tr key={r.id} className="border-b border-[var(--color-border-subtle)]">
                     <td className="py-2 pr-4 tabular-nums">{r.date}</td>
                     {!isEmployee ? <td className="py-2 pr-4">{empName(r.employeeId)}</td> : null}
+                    <td className={`py-2 pr-4${houseName(r) === '—' ? ' text-[var(--color-text-muted)]' : ''}`}>{houseName(r)}</td>
                     <td className="py-2 pr-4 tabular-nums">{formatClock(r.clockInAt)}</td>
                     <td className="py-2 pr-4 tabular-nums">{formatClock(r.clockOutAt)}</td>
                     <td className="py-2 pr-4 tabular-nums">
@@ -87,7 +107,7 @@ export default function AttendancePage() {
                 ))}
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={isEmployee ? 5 : 6} className="py-6 text-center text-[var(--color-text-muted)]">
+                    <td colSpan={isEmployee ? 6 : 7} className="py-6 text-center text-[var(--color-text-muted)]">
                       No attendance records yet. Clock in from the{' '}
                       {isEmployee ? (
                         <Link href="/login" className="text-[var(--color-primary)] hover:underline">sign-in page</Link>

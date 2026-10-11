@@ -52,8 +52,12 @@ export function AttendanceClock({ className }: { className?: string }) {
   function onClockIn() {
     if (!employee) return;
     setMsg(null);
-    const res = clockIn({ employeeId: employee.id, scheduleId: todayShift?.id, date: today, source: 'web' });
-    if (res.ok) setMsg({ kind: 'success', text: `Clocked in at ${formatClock(new Date().toISOString())}.` });
+    const res = clockIn({ employeeId: employee.id, scheduleId: todayShift?.id, houseId: house?.id, date: today, source: 'web' });
+    if (res.ok)
+      setMsg({
+        kind: 'success',
+        text: `Clocked in at ${formatClock(new Date().toISOString())}${house ? ` · ${house.name}` : ''}.`,
+      });
     else setMsg({ kind: 'error', text: res.error ?? 'Could not clock in.' });
   }
 

@@ -97,7 +97,7 @@ interface AppStore extends AppState {
   // Time & attendance. Times come from the system clock at call time and are
   // immutable afterward — the UI never lets a user type a clock time, so there
   // is no way to backdate a punch.
-  clockIn: (input: { employeeId: string; scheduleId?: string; date?: string; source?: Attendance['source'] }) =>
+  clockIn: (input: { employeeId: string; scheduleId?: string; houseId?: string; date?: string; source?: Attendance['source'] }) =>
     { ok: boolean; error?: string; id?: string };
   clockOut: (id: string) => { ok: boolean; error?: string };
   resetDemo: () => void;
@@ -346,6 +346,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         id: localId,
         employeeId: input.employeeId,
         scheduleId: input.scheduleId,
+        houseId: input.houseId,
         date,
         clockInAt: now.toISOString(),
         clockOutAt: null,

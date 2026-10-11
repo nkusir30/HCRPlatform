@@ -63,6 +63,11 @@ export interface Attendance {
   id: string;
   employeeId: string;
   scheduleId?: string;
+  // House this punch belongs to, snapshotted at clock-in time (the scheduled
+  // shift's house when one exists). Optional: unscheduled punches and records
+  // created before this field don't carry it — the UI falls back to the
+  // schedule's house when displaying.
+  houseId?: string;
   date: string; // local YYYY-MM-DD the shift belongs to
   clockInAt: string | null; // ISO timestamp, set by the clock, not the user
   clockOutAt: string | null; // ISO timestamp, set by the clock, not the user
