@@ -1,8 +1,9 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import type { AppState, Session, Employee, Schedule, Timesheet, Report, House, Program, Account } from './types';
+import type { AppState, Session, Employee, Schedule, Timesheet, Attendance, Report, House, Program, Account } from './types';
 import { seedState } from './seed';
+import { localDateISO } from './utils';
 import {
   syncCreate,
   syncUpdate,
@@ -47,6 +48,10 @@ function load(): AppState {
         Array.isArray(parsed.accounts) &&
         Array.isArray(parsed.programs)
       ) {
+        // Backfill collections added after a blob was first persisted.
+        if (!Array.isArray(parsed.attendance)) parsed.attendance = [];
+        if (!Array.isArray(parsed.timesheets)) parsed.timesheets = [];
+        if (!Array.isArray(parsed.reports)) parsed.reports = [];
         return parsed;
       }
     }
@@ -89,6 +94,12 @@ interface AppStore extends AppState {
   updateReport: (id: string, patch: Pick<Report, 'type' | 'parameters'>) => void;
   deleteReport: (id: string) => void;
   setTimesheetStatus: (id: string, status: Timesheet['status']) => void;
+  // Time & attendance. Times come from the system clock at call time and are
+  // immutable afterward — the UI never lets a user type a clock time, so there
+  // is no way to backdate a punch.
+  clockIn: (input: { employeeId: string; scheduleId?: string; date?: string; source?: Attendance['source'] }) =>
+    { ok: boolean; error?: string; id?: string };
+  clockOut: (id: string) => { ok: boolean; error?: string };
   resetDemo: () => void;
 }
 
@@ -320,6 +331,47 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       if (status === 'approved') {
         applySync(id, () => syncTimesheetApprove(state.orgId, remoteId(id)));
       }
+    },
+    clockIn(input) {
+      const now = new Date();
+      const date = input.date ?? localDateISO(now);
+      // One open punch per employee per day — prevents a second clock-in while
+      // already on the clock.
+      const open = state.attendance.find(
+        (a) => a.employeeId === input.employeeId && a.date === date && a.status === 'clocked-in',
+      );
+      if (open) return { ok: false, error: 'You are already clocked in for today.' };
+      const localId = newId('clxatt');
+      const entry: Attendance = {
+        id: localId,
+        employeeId: input.employeeId,
+        scheduleId: input.scheduleId,
+        date,
+        clockInAt: now.toISOString(),
+        clockOutAt: null,
+        status: 'clocked-in',
+        source: input.source ?? 'web',
+        createdAt: now.toISOString(),
+      };
+      setState((s) => ({ ...s, attendance: [entry, ...s.attendance] }));
+      // No attendance endpoint on the API yet — stays local-only, like programs.
+      return { ok: true, id: localId };
+    },
+    clockOut(id) {
+      const entry = state.attendance.find((a) => a.id === id);
+      if (!entry) return { ok: false, error: 'Attendance record not found.' };
+      if (entry.status === 'clocked-out') return { ok: false, error: 'Already clocked out.' };
+      const now = new Date();
+      // Guard against a clock-out that precedes its own clock-in (clock skew /
+      // manual device changes): clamp is impossible here because `now` is the
+      // real system time, but we never allow editing either timestamp anyway.
+      setState((s) => ({
+        ...s,
+        attendance: s.attendance.map((a) =>
+          a.id === id ? { ...a, clockOutAt: now.toISOString(), status: 'clocked-out' } : a,
+        ),
+      }));
+      return { ok: true };
     },
     resetDemo() {
       setState(seedState());

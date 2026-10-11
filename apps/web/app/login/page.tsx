@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp, DEMO_ACCOUNTS, DEMO_PASSWORD } from '@/lib/app-store';
+import { AttendanceClock } from '@/components/attendance-clock';
 import { Field, TextInput, Select, Alert } from '@/components/form';
 
 type Mode = 'signin' | 'signup';
 
 export default function LoginPage() {
-  const { login, signup, session, hydrated } = useApp();
+  const { login, signup, session, hydrated, accounts, logout } = useApp();
   const router = useRouter();
   const [mode, setMode] = useState<Mode>('signin');
 
@@ -22,10 +23,13 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // Already signed in? Go straight to the dashboard (after hydration).
+  // Employees stay on this page to use the real-time Time & Attendance clock
+  // (their shift for today). Everyone else is sent to the dashboard.
+  const isEmployee = session?.role === 'employee';
+
   useEffect(() => {
-    if (hydrated && session) router.replace('/dashboard');
-  }, [hydrated, session, router]);
+    if (hydrated && session && !isEmployee) router.replace('/dashboard');
+  }, [hydrated, session, isEmployee, router]);
 
   function onSignIn(e: React.FormEvent) {
     e.preventDefault();
@@ -33,8 +37,14 @@ export default function LoginPage() {
     setBusy(true);
     const res = login(email, password);
     setBusy(false);
-    if (res.ok) router.replace('/dashboard');
-    else setError(res.error ?? 'Login failed.');
+    if (!res.ok) {
+      setError(res.error ?? 'Login failed.');
+      return;
+    }
+    // Employees stay here for the Time & Attendance clock; the effect above
+    // handles redirecting everyone else to the dashboard.
+    const acct = accounts.find((a) => a.email.toLowerCase() === email.trim().toLowerCase());
+    if (acct?.role !== 'employee') router.replace('/dashboard');
   }
 
   function onSignUp(e: React.FormEvent) {
@@ -47,12 +57,47 @@ export default function LoginPage() {
     setBusy(true);
     const res = signup({ name: su.name, email: su.email, password: su.password, role: su.role });
     setBusy(false);
-    if (res.ok) router.replace('/dashboard');
-    else setError(res.error ?? 'Sign up failed.');
+    if (!res.ok) {
+      setError(res.error ?? 'Sign up failed.');
+      return;
+    }
+    if (su.role !== 'employee') router.replace('/dashboard');
   }
 
-  // While hydrating (or already logged in and about to redirect), show a neutral
+  // A logged-in employee gets the Time & Attendance clock on this page. Gate on
+  // `hydrated` so the first client render matches the server render (Loading)
+  // — the store only reads localStorage after mount — avoiding a hydration
+  // mismatch. While hydrating (or a non-employee mid-redirect) show a neutral
   // state that matches the server render to avoid a hydration mismatch.
+  if (hydrated && session && isEmployee) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-bg-base">
+        <div className="w-full max-w-lg">
+          <div className="text-center mb-6">
+            <img src="/hcr-logo.svg" alt="Home Care Residential, LLC" className="mx-auto mb-4 w-full max-w-xs" />
+          </div>
+          <AttendanceClock />
+          <div className="mt-6 flex items-center justify-between text-sm">
+            <button
+              type="button"
+              onClick={() => { logout(); router.replace('/login'); }}
+              className="text-[var(--color-danger)] hover:underline"
+            >
+              Sign out
+            </button>
+            <button
+              type="button"
+              onClick={() => router.replace('/dashboard')}
+              className="text-[var(--color-primary)] hover:underline"
+            >
+              Go to dashboard →
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!hydrated || session) {
     return (
       <div className="min-h-screen flex items-center justify-center p-8 text-[var(--color-text-secondary)]">

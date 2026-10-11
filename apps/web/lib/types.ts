@@ -56,6 +56,21 @@ export interface Timesheet {
   status: 'draft' | 'submitted' | 'approved';
 }
 
+// Time & Attendance. Times are captured from the system clock at the instant of
+// the clock in/out action and are never editable in the UI — this guarantees a
+// real-time record with no backdating.
+export interface Attendance {
+  id: string;
+  employeeId: string;
+  scheduleId?: string;
+  date: string; // local YYYY-MM-DD the shift belongs to
+  clockInAt: string | null; // ISO timestamp, set by the clock, not the user
+  clockOutAt: string | null; // ISO timestamp, set by the clock, not the user
+  status: 'clocked-in' | 'clocked-out';
+  source: 'kiosk' | 'web';
+  createdAt: string;
+}
+
 export type ReportType =
   | 'payroll-summary'
   | 'paycheck-detail'
@@ -122,6 +137,7 @@ export interface AppState {
   employees: Employee[];
   schedules: Schedule[];
   timesheets: Timesheet[];
+  attendance: Attendance[];
   reports: Report[];
   // local record id -> server row id, filled in by the hybrid sync layer.
   // Optional because blobs persisted before this feature won't have it.

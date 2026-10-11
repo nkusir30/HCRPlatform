@@ -7,6 +7,7 @@ import { useApp } from '@/lib/app-store';
 
 const NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊' },
+  { href: '/attendance', label: 'Time & Attendance', icon: '⏰' },
   { href: '/schedules', label: 'Schedules', icon: '🗓️' },
   { href: '/timesheets', label: 'Timesheets', icon: '⏱️' },
   { href: '/employees', label: 'Employees', icon: '👥' },

@@ -2,7 +2,7 @@
 // Ids are cuid-like strings so they survive being used as React keys and look
 // consistent with what the real API returns. This data lives client-side only;
 // swapping to the live API later means replacing the store's initial state.
-import type { AppState, Employee, Schedule, Timesheet, Report, House, Program, Account } from './types';
+import type { AppState, Employee, Schedule, ScheduleType, Timesheet, Report, House, Program, Account } from './types';
 
 export const ORG_ID = envOr('NEXT_PUBLIC_ORG_ID', 'clxorg0001hcrplatformdemo');
 export const COMPANY_ID = envOr('NEXT_PUBLIC_COMPANY_ID', 'clxco00001hcrplatformdemo');
@@ -156,30 +156,20 @@ export const EMPLOYEES: Employee[] = [
 ];
 
 export const SCHEDULES: Schedule[] = [
-  {
-    id: 'clxsch0001hcrplatformdemo',
+  // Maria Garcia (demo employee) works a full-time awake day shift every day of
+  // the week, so she always has a shift scheduled "today" for the clock in/out.
+  ...([0, 1, 2, 3, 4, 5, 6].map((dow, i) => ({
+    id: `clxschd00${i + 1}hcrplatformdemo`,
     employeeId: EMPLOYEES[0]!.id,
     houseId: HOUSES[0]!.id,
     payrollPeriodId: PAYROLL_PERIOD_ID,
-    dayOfWeek: 1,
+    dayOfWeek: dow,
     startTime: '08:00',
     endTime: '16:00',
     breakDuration: 30,
-    scheduleType: 'shift',
+    scheduleType: 'shift' as ScheduleType,
     comment: 'Weekday day shift',
-  },
-  {
-    id: 'clxsch0002hcrplatformdemo',
-    employeeId: EMPLOYEES[0]!.id,
-    houseId: HOUSES[0]!.id,
-    payrollPeriodId: PAYROLL_PERIOD_ID,
-    dayOfWeek: 3,
-    startTime: '08:00',
-    endTime: '16:00',
-    breakDuration: 30,
-    scheduleType: 'shift',
-    comment: 'Weekday day shift',
-  },
+  }))),
   {
     id: 'clxsch0003hcrplatformdemo',
     employeeId: EMPLOYEES[1]!.id,
@@ -274,6 +264,7 @@ export function seedState(): AppState {
     employees: EMPLOYEES,
     schedules: SCHEDULES,
     timesheets: TIMESHEETS,
+    attendance: [],
     reports: REPORTS,
     remoteIds: {},
   };
