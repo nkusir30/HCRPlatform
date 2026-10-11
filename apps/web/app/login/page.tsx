@@ -77,20 +77,13 @@ export default function LoginPage() {
             <img src="/hcr-logo.svg" alt="Home Care Residential, LLC" className="mx-auto mb-4 w-full max-w-xs" />
           </div>
           <AttendanceClock />
-          <div className="mt-6 flex items-center justify-between text-sm">
+          <div className="mt-6 flex items-center justify-center text-sm">
             <button
               type="button"
               onClick={() => { logout(); router.replace('/login'); }}
               className="text-[var(--color-danger)] hover:underline"
             >
               Sign out
-            </button>
-            <button
-              type="button"
-              onClick={() => router.replace('/dashboard')}
-              className="text-[var(--color-primary)] hover:underline"
-            >
-              Go to dashboard →
             </button>
           </div>
         </div>

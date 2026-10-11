@@ -9,7 +9,12 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (hydrated) router.replace(session ? '/dashboard' : '/login');
+    if (!hydrated) return;
+    // Employees only get the Time & Attendance clock (sign-in page); everyone
+    // else lands on the dashboard.
+    if (!session) router.replace('/login');
+    else if (session.role === 'employee') router.replace('/login');
+    else router.replace('/dashboard');
   }, [hydrated, session, router]);
 
   return (

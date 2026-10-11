@@ -23,8 +23,14 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   // Until the client has read localStorage, render a neutral state that matches
   // the server (no session) so hydration succeeds. Then enforce the auth guard.
+  // Employees are limited to the Time & Attendance clock on /login — they have
+  // no access to the rest of the platform, so bounce them off every other route.
+  // Signed-out users are sent to /login as before.
   useEffect(() => {
-    if (hydrated && !session && pathname !== '/login') router.replace('/login');
+    if (!hydrated) return;
+    if (!session || session.role === 'employee') {
+      if (pathname !== '/login') router.replace('/login');
+    }
   }, [hydrated, session, pathname, router]);
 
   if (!hydrated) {
@@ -39,6 +45,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     return (
       <div className="min-h-screen flex items-center justify-center p-8 text-[var(--color-text-secondary)]">
         Redirecting to sign in…
+      </div>
+    );
+  }
+
+  if (session.role === 'employee') {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-8 text-[var(--color-text-secondary)]">
+        Redirecting to your time clock…
       </div>
     );
   }
