@@ -123,4 +123,7 @@ export interface AppState {
   schedules: Schedule[];
   timesheets: Timesheet[];
   reports: Report[];
+  // local record id -> server row id, filled in by the hybrid sync layer.
+  // Optional because blobs persisted before this feature won't have it.
+  remoteIds?: Record<string, string>;
 }

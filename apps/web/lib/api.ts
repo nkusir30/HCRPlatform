@@ -31,13 +31,21 @@ export async function apiGet<T = unknown>(path: string): Promise<ApiResult<T>> {
 }
 
 export async function apiPost<T = unknown>(path: string, body: unknown): Promise<ApiResult<T>> {
+  return apiSend<T>(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+}
+
+export async function apiPut<T = unknown>(path: string, body: unknown): Promise<ApiResult<T>> {
+  return apiSend<T>(path, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+}
+
+export async function apiDelete<T = unknown>(path: string): Promise<ApiResult<T>> {
+  return apiSend<T>(path, { method: 'DELETE' });
+}
+
+async function apiSend<T = unknown>(path: string, init: RequestInit): Promise<ApiResult<T>> {
   const started = Date.now();
   try {
-    const res = await fetch(`${BASE}${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    const res = await fetch(`${BASE}${path}`, init);
     const text = await res.text();
     let data: T | null = null;
     try {

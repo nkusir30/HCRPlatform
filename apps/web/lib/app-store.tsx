@@ -3,8 +3,26 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import type { AppState, Session, Employee, Schedule, Timesheet, Report, House, Program, Account } from './types';
 import { seedState } from './seed';
+import {
+  syncCreate,
+  syncUpdate,
+  syncDelete,
+  syncTimesheetApprove,
+  employeeCreatePayload,
+  employeeUpdatePayload,
+  houseCreatePayload,
+  houseUpdatePayload,
+  schedulePayload,
+  timesheetCreatePayload,
+  timesheetUpdatePayload,
+  reportCreatePayload,
+  reportUpdatePayload,
+  type SyncResult,
+} from './sync';
 
 const STORAGE_KEY = 'hcr_app_state_v1';
+
+export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'local-only';
 
 // Demo credentials (mirrors prisma/seed.ts). Any of these emails + this password logs in.
 export const DEMO_PASSWORD = 'Dem0Demo123!';
@@ -46,6 +64,8 @@ function newId(prefix: string) {
 
 interface AppStore extends AppState {
   hydrated: boolean;
+  syncStatus: SyncStatus;
+  lastSyncError: string | null;
   login: (email: string, password: string) => { ok: boolean; error?: string };
   signup: (input: { name: string; email: string; password: string; role: Session['role'] }) => { ok: boolean; error?: string };
   logout: () => void;
@@ -53,10 +73,21 @@ interface AppStore extends AppState {
   updateEmployee: (id: string, patch: Omit<Employee, 'id'>) => void;
   deleteEmployee: (id: string) => void;
   addHouse: (h: Omit<House, 'id'>) => void;
+  updateHouse: (id: string, patch: Omit<House, 'id'>) => void;
+  deleteHouse: (id: string) => void;
   addProgram: (p: Omit<Program, 'id'>) => void;
+  updateProgram: (id: string, patch: Omit<Program, 'id'>) => void;
+  deleteProgram: (id: string) => void;
   addSchedule: (s: Omit<Schedule, 'id'>) => void;
+  addSchedules: (items: Omit<Schedule, 'id'>[]) => void;
+  updateSchedule: (id: string, patch: Omit<Schedule, 'id'>) => void;
+  deleteSchedule: (id: string) => void;
   addTimesheet: (t: Omit<Timesheet, 'id'>) => void;
+  updateTimesheet: (id: string, patch: Omit<Timesheet, 'id'>) => void;
+  deleteTimesheet: (id: string) => void;
   addReport: (r: Omit<Report, 'id' | 'reportId' | 'createdAt' | 'status'>) => void;
+  updateReport: (id: string, patch: Pick<Report, 'type' | 'parameters'>) => void;
+  deleteReport: (id: string) => void;
   setTimesheetStatus: (id: string, status: Timesheet['status']) => void;
   resetDemo: () => void;
 }
@@ -69,6 +100,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   // first client render must match the server render (no session) to avoid a
   // hydration mismatch, so we gate session-dependent UI on this flag.
   const [hydrated, setHydrated] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const [lastSyncError, setLastSyncError] = useState<string | null>(null);
 
   useEffect(() => {
     setHydrated(true);
@@ -82,9 +115,37 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     }
   }, [state]);
 
+  // Hybrid persistence: local state is updated synchronously (UI never waits),
+  // then the same mutation is mirrored to the API in the background. A dead or
+  // unreachable API just flips us to 'local-only' — entries are never lost.
+  const remoteId = (localId: string) => state.remoteIds?.[localId] ?? localId;
+
+  function applySync(localId: string, run: () => Promise<SyncResult>) {
+    setSyncStatus('syncing');
+    run()
+      .then((res) => {
+        if (res.ok) {
+          setSyncStatus('synced');
+          setLastSyncError(null);
+          if (res.serverId && res.serverId !== localId) {
+            setState((s) => ({ ...s, remoteIds: { ...(s.remoteIds ?? {}), [localId]: res.serverId as string } }));
+          }
+        } else {
+          setSyncStatus('local-only');
+          setLastSyncError(res.error ?? 'sync failed');
+        }
+      })
+      .catch((e: unknown) => {
+        setSyncStatus('local-only');
+        setLastSyncError(e instanceof Error ? e.message : 'network error');
+      });
+  }
+
   const store: AppStore = {
     ...state,
     hydrated,
+    syncStatus,
+    lastSyncError,
     login(email, password) {
       const account = state.accounts.find(
         (a) => a.email.toLowerCase() === email.trim().toLowerCase(),
@@ -123,19 +184,16 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       setState((s) => ({ ...s, session: null }));
     },
     addEmployee(e) {
-      setState((s) => ({ ...s, employees: [{ ...e, id: newId('clxemp') }, ...s.employees] }));
-    },
-    addHouse(h) {
-      setState((s) => ({ ...s, houses: [{ ...h, id: newId('clxhouse') }, ...s.houses] }));
-    },
-    addProgram(p) {
-      setState((s) => ({ ...s, programs: [{ ...p, id: newId('clxprg') }, ...s.programs] }));
+      const localId = newId('clxemp');
+      setState((s) => ({ ...s, employees: [{ ...e, id: localId }, ...s.employees] }));
+      applySync(localId, () => syncCreate('employee', state.orgId, employeeCreatePayload(e)));
     },
     updateEmployee(id, patch) {
       setState((s) => ({
         ...s,
         employees: s.employees.map((emp) => (emp.id === id ? { ...emp, ...patch, id } : emp)),
       }));
+      applySync(id, () => syncUpdate('employee', state.orgId, remoteId(id), employeeUpdatePayload(patch)));
     },
     deleteEmployee(id) {
       setState((s) => ({
@@ -145,31 +203,123 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         schedules: s.schedules.filter((sch) => sch.employeeId !== id),
         timesheets: s.timesheets.filter((t) => t.employeeId !== id),
       }));
+      applySync(id, () => syncDelete('employee', state.orgId, remoteId(id)));
+    },
+    addHouse(h) {
+      const localId = newId('clxhouse');
+      setState((s) => ({ ...s, houses: [{ ...h, id: localId }, ...s.houses] }));
+      applySync(localId, () => syncCreate('house', state.orgId, houseCreatePayload(h)));
+    },
+    updateHouse(id, patch) {
+      setState((s) => ({
+        ...s,
+        houses: s.houses.map((h) => (h.id === id ? { ...h, ...patch, id } : h)),
+      }));
+      applySync(id, () => syncUpdate('house', state.orgId, remoteId(id), houseUpdatePayload(patch)));
+    },
+    deleteHouse(id) {
+      setState((s) => ({
+        ...s,
+        houses: s.houses.filter((h) => h.id !== id),
+        // Cascades: schedules bound to the house, programs scoped to it become all-houses.
+        schedules: s.schedules.filter((sch) => sch.houseId !== id),
+        programs: s.programs.map((p) => (p.houseId === id ? { ...p, houseId: undefined } : p)),
+      }));
+      applySync(id, () => syncDelete('house', state.orgId, remoteId(id)));
+    },
+    addProgram(p) {
+      setState((s) => ({ ...s, programs: [{ ...p, id: newId('clxprg') }, ...s.programs] }));
+      // No programs endpoint on the API yet — programs remain local-only.
+    },
+    updateProgram(id, patch) {
+      setState((s) => ({
+        ...s,
+        programs: s.programs.map((p) => (p.id === id ? { ...p, ...patch, id } : p)),
+      }));
+    },
+    deleteProgram(id) {
+      setState((s) => ({ ...s, programs: s.programs.filter((p) => p.id !== id) }));
     },
     addSchedule(sh) {
-      setState((s) => ({ ...s, schedules: [{ ...sh, id: newId('clxsch') }, ...s.schedules] }));
+      const localId = newId('clxsch');
+      setState((s) => ({ ...s, schedules: [{ ...sh, id: localId }, ...s.schedules] }));
+      applySync(localId, () => syncCreate('schedule', state.orgId, schedulePayload(sh, remoteId)));
+    },
+    addSchedules(items) {
+      if (items.length === 0) return;
+      const created = items.map((sh) => ({ ...sh, id: newId('clxsch') }));
+      setState((s) => ({ ...s, schedules: [...created, ...s.schedules] }));
+      // Mirror each day's shift to the API individually (the schema stores one
+      // row per dayOfWeek, same as local).
+      for (const row of created) {
+        const { id, ...rest } = row;
+        applySync(id, () => syncCreate('schedule', state.orgId, schedulePayload(rest, remoteId)));
+      }
+    },
+    updateSchedule(id, patch) {
+      setState((s) => ({
+        ...s,
+        schedules: s.schedules.map((sch) => (sch.id === id ? { ...sch, ...patch, id } : sch)),
+      }));
+      applySync(id, () => syncUpdate('schedule', state.orgId, remoteId(id), schedulePayload(patch, remoteId)));
+    },
+    deleteSchedule(id) {
+      setState((s) => ({ ...s, schedules: s.schedules.filter((sch) => sch.id !== id) }));
+      applySync(id, () => syncDelete('schedule', state.orgId, remoteId(id)));
     },
     addTimesheet(t) {
-      setState((s) => ({ ...s, timesheets: [{ ...t, id: newId('clxts') }, ...s.timesheets] }));
+      const localId = newId('clxts');
+      setState((s) => ({ ...s, timesheets: [{ ...t, id: localId }, ...s.timesheets] }));
+      applySync(localId, () => syncCreate('timesheet', state.orgId, timesheetCreatePayload(t, remoteId)));
+    },
+    updateTimesheet(id, patch) {
+      setState((s) => ({
+        ...s,
+        timesheets: s.timesheets.map((t) => (t.id === id ? { ...t, ...patch, id } : t)),
+      }));
+      applySync(id, () => syncUpdate('timesheet', state.orgId, remoteId(id), timesheetUpdatePayload(patch, remoteId)));
+    },
+    deleteTimesheet(id) {
+      setState((s) => ({ ...s, timesheets: s.timesheets.filter((t) => t.id !== id) }));
+      applySync(id, () => syncDelete('timesheet', state.orgId, remoteId(id)));
     },
     addReport(r) {
+      const n = state.reports.length + 1001;
+      const reportId = `RPT-${n}`;
+      const localId = newId('clxrep');
       setState((s) => {
-        const n = s.reports.length + 1001;
         const report: Report = {
           ...r,
-          id: newId('clxrep'),
-          reportId: `RPT-${n}`,
+          id: localId,
+          reportId,
           status: 'pending',
           createdAt: new Date().toISOString(),
         };
         return { ...s, reports: [report, ...s.reports] };
       });
+      applySync(localId, () =>
+        syncCreate('report', state.orgId, reportCreatePayload({ ...r, reportId, status: 'pending' })),
+      );
+    },
+    updateReport(id, patch) {
+      setState((s) => ({
+        ...s,
+        reports: s.reports.map((rep) => (rep.id === id ? { ...rep, ...patch } : rep)),
+      }));
+      applySync(id, () => syncUpdate('report', state.orgId, remoteId(id), reportUpdatePayload(patch)));
+    },
+    deleteReport(id) {
+      setState((s) => ({ ...s, reports: s.reports.filter((rep) => rep.id !== id) }));
+      applySync(id, () => syncDelete('report', state.orgId, remoteId(id)));
     },
     setTimesheetStatus(id, status) {
       setState((s) => ({
         ...s,
         timesheets: s.timesheets.map((t) => (t.id === id ? { ...t, status } : t)),
       }));
+      if (status === 'approved') {
+        applySync(id, () => syncTimesheetApprove(state.orgId, remoteId(id)));
+      }
     },
     resetDemo() {
       setState(seedState());

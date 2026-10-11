@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useApp } from '@/lib/app-store';
+import type { House } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader, Field, TextInput, Alert } from '@/components/form';
@@ -24,12 +25,40 @@ const empty = {
 type FormState = typeof empty;
 
 export default function HousesPage() {
-  const { houses, companyId, addHouse } = useApp();
+  const { houses, companyId, addHouse, updateHouse, deleteHouse } = useApp();
   const [form, setForm] = useState<FormState>({ ...empty });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
 
   function set(k: keyof FormState, v: string) {
     setForm((f) => ({ ...f, [k]: v }));
+  }
+
+  function startEdit(h: House) {
+    setEditingId(h.id);
+    setConfirmId(null);
+    setMsg(null);
+    setForm({
+      name: h.name,
+      code: h.code,
+      address1: h.address1,
+      address2: h.address2 ?? '',
+      city: h.city,
+      state: h.state,
+      postalCode: h.postalCode,
+      country: h.country,
+      phone: h.phone ?? '',
+      email: h.email ?? '',
+      managerName: h.managerName ?? '',
+      managerPhone: h.managerPhone ?? '',
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setMsg(null);
+    setForm({ ...empty });
   }
 
   function submit(e: React.FormEvent) {
@@ -39,11 +68,12 @@ export default function HousesPage() {
       setMsg({ kind: 'error', text: 'Name, code, address, city, state, ZIP and country are required.' });
       return;
     }
-    if (houses.some((h) => h.code.toLowerCase() === form.code.trim().toLowerCase())) {
+    const dup = houses.some((h) => h.code.toLowerCase() === form.code.trim().toUpperCase().toLowerCase() && h.id !== editingId);
+    if (dup) {
       setMsg({ kind: 'error', text: 'A house with that code already exists.' });
       return;
     }
-    addHouse({
+    const payload = {
       companyId,
       name: form.name.trim(),
       code: form.code.trim().toUpperCase(),
@@ -57,9 +87,27 @@ export default function HousesPage() {
       email: form.email.trim() || undefined,
       managerName: form.managerName.trim() || undefined,
       managerPhone: form.managerPhone.trim() || undefined,
-    });
+    };
+
+    if (editingId) {
+      updateHouse(editingId, payload);
+      setMsg({ kind: 'success', text: `${payload.name} updated.` });
+      cancelEdit();
+      return;
+    }
+
+    addHouse(payload);
     setMsg({ kind: 'success', text: `${form.name.trim()} added. It now appears when scheduling shifts.` });
     setForm({ ...empty });
+  }
+
+  function confirmDelete() {
+    if (!confirmId) return;
+    const house = houses.find((h) => h.id === confirmId);
+    deleteHouse(confirmId);
+    setConfirmId(null);
+    if (editingId === confirmId) cancelEdit();
+    setMsg({ kind: 'success', text: `${house ? house.name : 'House'} removed.` });
   }
 
   return (
@@ -82,19 +130,34 @@ export default function HousesPage() {
                     <th className="py-2 pr-3">Name</th>
                     <th className="py-2 pr-3">Location</th>
                     <th className="py-2 pr-3">Manager</th>
+                    <th className="py-2 pr-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {houses.map((h) => (
-                    <tr key={h.id} className="border-b border-[var(--color-border-subtle)]">
+                    <tr key={h.id} className={`border-b border-[var(--color-border-subtle)] ${editingId === h.id ? 'bg-[var(--color-primary-light)]' : ''}`}>
                       <td className="py-2 pr-3"><Badge size="sm">{h.code}</Badge></td>
                       <td className="py-2 pr-3 font-medium">{h.name}</td>
                       <td className="py-2 pr-3 text-[var(--color-text-secondary)]">{h.city}, {h.state}</td>
                       <td className="py-2 pr-3 text-[var(--color-text-secondary)]">{h.managerName ?? '—'}</td>
+                      <td className="py-2 pr-3">
+                        {confirmId === h.id ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="text-xs text-[var(--color-text-secondary)]">Delete?</span>
+                            <button onClick={confirmDelete} className="text-xs rounded px-2 py-1 bg-[var(--color-danger)] text-white hover:opacity-90">Yes</button>
+                            <button onClick={() => setConfirmId(null)} className="text-xs rounded px-2 py-1 border border-[var(--color-border)] hover:bg-[var(--color-border-subtle)]">No</button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-end gap-3">
+                            <button onClick={() => startEdit(h)} className="text-xs text-[var(--color-primary)] hover:underline">Edit</button>
+                            <button onClick={() => { setConfirmId(h.id); setMsg(null); }} className="text-xs text-[var(--color-danger)] hover:underline">Delete</button>
+                          </div>
+                        )}
+                      </td>
                     </tr>
                   ))}
                   {houses.length === 0 ? (
-                    <tr><td colSpan={4} className="py-6 text-center text-[var(--color-text-muted)]">No houses yet.</td></tr>
+                    <tr><td colSpan={5} className="py-6 text-center text-[var(--color-text-muted)]">No houses yet.</td></tr>
                   ) : null}
                 </tbody>
               </table>
@@ -105,7 +168,7 @@ export default function HousesPage() {
         <div className="lg:col-span-2">
           <Card variant="elevated">
             <CardHeader>
-              <CardTitle>Add house</CardTitle>
+              <CardTitle>{editingId ? 'Edit house' : 'Add house'}</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={submit} className="flex flex-col gap-3">
@@ -129,9 +192,16 @@ export default function HousesPage() {
                   <Field label="Manager name"><TextInput value={form.managerName} onChange={(e) => set('managerName', e.target.value)} placeholder="Jane Doe" /></Field>
                   <Field label="Manager phone"><TextInput value={form.managerPhone} onChange={(e) => set('managerPhone', e.target.value)} placeholder="9165550177" /></Field>
                 </div>
-                <button type="submit" className="mt-1 rounded-md bg-[var(--color-primary)] text-white px-4 py-2.5 font-medium hover:bg-[var(--color-primary-hover)]">
-                  Add house
-                </button>
+                <div className="flex gap-2">
+                  <button type="submit" className="flex-1 rounded-md bg-[var(--color-primary)] text-white px-4 py-2.5 font-medium hover:bg-[var(--color-primary-hover)]">
+                    {editingId ? 'Save changes' : 'Add house'}
+                  </button>
+                  {editingId ? (
+                    <button type="button" onClick={cancelEdit} className="rounded-md border border-[var(--color-border)] px-4 py-2.5 hover:bg-[var(--color-border-subtle)]">
+                      Cancel
+                    </button>
+                  ) : null}
+                </div>
               </form>
             </CardContent>
           </Card>

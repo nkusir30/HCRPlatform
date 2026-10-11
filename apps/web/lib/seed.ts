@@ -4,8 +4,15 @@
 // swapping to the live API later means replacing the store's initial state.
 import type { AppState, Employee, Schedule, Timesheet, Report, House, Program, Account } from './types';
 
-export const ORG_ID = 'clxorg0001hcrplatformdemo';
-export const COMPANY_ID = 'clxco00001hcrplatformdemo';
+export const ORG_ID = envOr('NEXT_PUBLIC_ORG_ID', 'clxorg0001hcrplatformdemo');
+export const COMPANY_ID = envOr('NEXT_PUBLIC_COMPANY_ID', 'clxco00001hcrplatformdemo');
+
+// Overridable so the web app can point at the real API database: set
+// NEXT_PUBLIC_ORG_ID / NEXT_PUBLIC_COMPANY_ID to the ids that exist in Postgres
+// (the demo fallbacks won't satisfy the API's FK constraints).
+function envOr(key: string, fallback: string): string {
+  return (typeof process !== 'undefined' && process.env[key]) || fallback;
+}
 
 export const HOUSES: House[] = [
   {
@@ -67,7 +74,7 @@ export const PROGRAMS: Program[] = [
   {
     id: 'clxprg0001hcrplatformdemo',
     companyId: COMPANY_ID,
-    houseId: HOUSES[0].id,
+    houseId: HOUSES[0]!.id,
     programId: 'PRG-2026-RCFE',
     name: 'Residential Care (RCFE)',
     code: 'RCFE',
@@ -77,7 +84,7 @@ export const PROGRAMS: Program[] = [
   {
     id: 'clxprg0002hcrplatformdemo',
     companyId: COMPANY_ID,
-    houseId: HOUSES[1].id,
+    houseId: HOUSES[1]!.id,
     programId: 'PRG-2026-ALZ',
     name: 'Alzheimer’s & Dementia Care',
     code: 'ALZ',
@@ -151,8 +158,8 @@ export const EMPLOYEES: Employee[] = [
 export const SCHEDULES: Schedule[] = [
   {
     id: 'clxsch0001hcrplatformdemo',
-    employeeId: EMPLOYEES[0].id,
-    houseId: HOUSES[0].id,
+    employeeId: EMPLOYEES[0]!.id,
+    houseId: HOUSES[0]!.id,
     payrollPeriodId: PAYROLL_PERIOD_ID,
     dayOfWeek: 1,
     startTime: '08:00',
@@ -163,8 +170,8 @@ export const SCHEDULES: Schedule[] = [
   },
   {
     id: 'clxsch0002hcrplatformdemo',
-    employeeId: EMPLOYEES[0].id,
-    houseId: HOUSES[0].id,
+    employeeId: EMPLOYEES[0]!.id,
+    houseId: HOUSES[0]!.id,
     payrollPeriodId: PAYROLL_PERIOD_ID,
     dayOfWeek: 3,
     startTime: '08:00',
@@ -175,8 +182,8 @@ export const SCHEDULES: Schedule[] = [
   },
   {
     id: 'clxsch0003hcrplatformdemo',
-    employeeId: EMPLOYEES[1].id,
-    houseId: HOUSES[1].id,
+    employeeId: EMPLOYEES[1]!.id,
+    houseId: HOUSES[1]!.id,
     payrollPeriodId: PAYROLL_PERIOD_ID,
     dayOfWeek: 2,
     startTime: '14:00',
@@ -187,8 +194,8 @@ export const SCHEDULES: Schedule[] = [
   },
   {
     id: 'clxsch0004hcrplatformdemo',
-    employeeId: EMPLOYEES[2].id,
-    houseId: HOUSES[2].id,
+    employeeId: EMPLOYEES[2]!.id,
+    houseId: HOUSES[2]!.id,
     payrollPeriodId: PAYROLL_PERIOD_ID,
     dayOfWeek: 4,
     startTime: '09:00',
@@ -202,7 +209,7 @@ export const TIMESHEETS: Timesheet[] = [
   {
     id: 'clxts00001hcrplatformdemo',
     companyId: COMPANY_ID,
-    employeeId: EMPLOYEES[0].id,
+    employeeId: EMPLOYEES[0]!.id,
     payrollPeriodId: PAYROLL_PERIOD_ID,
     date: '2026-10-05',
     workType: 'direct-care',
@@ -214,7 +221,7 @@ export const TIMESHEETS: Timesheet[] = [
   {
     id: 'clxts00002hcrplatformdemo',
     companyId: COMPANY_ID,
-    employeeId: EMPLOYEES[1].id,
+    employeeId: EMPLOYEES[1]!.id,
     payrollPeriodId: PAYROLL_PERIOD_ID,
     date: '2026-10-06',
     workType: 'clinical',
@@ -226,7 +233,7 @@ export const TIMESHEETS: Timesheet[] = [
   {
     id: 'clxts00003hcrplatformdemo',
     companyId: COMPANY_ID,
-    employeeId: EMPLOYEES[2].id,
+    employeeId: EMPLOYEES[2]!.id,
     payrollPeriodId: PAYROLL_PERIOD_ID,
     date: '2026-10-07',
     workType: 'direct-care',
@@ -268,5 +275,6 @@ export function seedState(): AppState {
     schedules: SCHEDULES,
     timesheets: TIMESHEETS,
     reports: REPORTS,
+    remoteIds: {},
   };
 }

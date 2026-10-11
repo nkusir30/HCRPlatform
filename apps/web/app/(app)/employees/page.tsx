@@ -65,6 +65,7 @@ export default function EmployeesPage() {
       setMsg({ kind: 'error', text: 'Another employee with that email already exists.' });
       return;
     }
+    const current = editingId ? employees.find((x) => x.id === editingId) : undefined;
     const payload = {
       companyId,
       firstName: form.firstName.trim(),
@@ -77,7 +78,7 @@ export default function EmployeesPage() {
     };
 
     if (editingId) {
-      updateEmployee(editingId, payload);
+      updateEmployee(editingId, { ...payload, isActive: current?.isActive ?? true });
       setMsg({ kind: 'success', text: `${payload.firstName} ${payload.lastName} updated.` });
       setEditingId(null);
       setForm({ ...empty });

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useApp } from '@/lib/app-store';
+import type { Program } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader, Field, TextInput, Select, Alert } from '@/components/form';
@@ -17,8 +18,10 @@ const empty = {
 type FormState = typeof empty;
 
 export default function ProgramsPage() {
-  const { programs, houses, companyId, addProgram } = useApp();
+  const { programs, houses, companyId, addProgram, updateProgram, deleteProgram } = useApp();
   const [form, setForm] = useState<FormState>({ ...empty });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
 
   function set(k: keyof FormState, v: string) {
@@ -27,6 +30,25 @@ export default function ProgramsPage() {
 
   const houseName = (id?: string) => (id ? houses.find((h) => h.id === id)?.name ?? '—' : 'All houses');
 
+  function startEdit(p: Program) {
+    setEditingId(p.id);
+    setConfirmId(null);
+    setMsg(null);
+    setForm({
+      name: p.name,
+      code: p.code,
+      description: p.description ?? '',
+      houseId: p.houseId ?? '',
+      active: p.active ? 'true' : 'false',
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setMsg(null);
+    setForm({ ...empty });
+  }
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
@@ -34,22 +56,46 @@ export default function ProgramsPage() {
       setMsg({ kind: 'error', text: 'Program name and code are required.' });
       return;
     }
-    if (programs.some((p) => p.code.toLowerCase() === form.code.trim().toLowerCase())) {
+    if (programs.some((p) => p.code.toLowerCase() === form.code.trim().toLowerCase() && p.id !== editingId)) {
       setMsg({ kind: 'error', text: 'A program with that code already exists.' });
       return;
     }
-    const count = programs.length + 1;
-    addProgram({
+    const fields = {
       companyId,
       houseId: form.houseId || undefined,
-      programId: `PRG-2026-${form.code.trim().toUpperCase()}`,
       name: form.name.trim(),
       code: form.code.trim().toUpperCase(),
       description: form.description.trim() || undefined,
       active: form.active === 'true',
+    };
+
+    if (editingId) {
+      const current = programs.find((p) => p.id === editingId);
+      updateProgram(editingId, {
+        ...fields,
+        programId: current?.programId ?? `PRG-2026-${fields.code}`,
+      });
+      setMsg({ kind: 'success', text: `${fields.name} updated.` });
+      cancelEdit();
+      return;
+    }
+
+    const count = programs.length + 1;
+    addProgram({
+      ...fields,
+      programId: `PRG-2026-${fields.code}`,
     });
-    setMsg({ kind: 'success', text: `Program #${count} created: ${form.name.trim()}.` });
+    setMsg({ kind: 'success', text: `Program #${count} created: ${fields.name}.` });
     setForm({ ...empty });
+  }
+
+  function confirmDelete() {
+    if (!confirmId) return;
+    const program = programs.find((p) => p.id === confirmId);
+    deleteProgram(confirmId);
+    setConfirmId(null);
+    if (editingId === confirmId) cancelEdit();
+    setMsg({ kind: 'success', text: `${program ? program.name : 'Program'} removed.` });
   }
 
   return (
@@ -72,11 +118,12 @@ export default function ProgramsPage() {
                     <th className="py-2 pr-3">Name</th>
                     <th className="py-2 pr-3">House</th>
                     <th className="py-2 pr-3">Status</th>
+                    <th className="py-2 pr-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {programs.map((p) => (
-                    <tr key={p.id} className="border-b border-[var(--color-border-subtle)]">
+                    <tr key={p.id} className={`border-b border-[var(--color-border-subtle)] ${editingId === p.id ? 'bg-[var(--color-primary-light)]' : ''}`}>
                       <td className="py-2 pr-3"><Badge size="sm">{p.code}</Badge></td>
                       <td className="py-2 pr-3">
                         <div className="font-medium">{p.name}</div>
@@ -88,10 +135,24 @@ export default function ProgramsPage() {
                           ? <Badge variant="success" size="sm">Active</Badge>
                           : <Badge size="sm">Inactive</Badge>}
                       </td>
+                      <td className="py-2 pr-3">
+                        {confirmId === p.id ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="text-xs text-[var(--color-text-secondary)]">Delete?</span>
+                            <button onClick={confirmDelete} className="text-xs rounded px-2 py-1 bg-[var(--color-danger)] text-white hover:opacity-90">Yes</button>
+                            <button onClick={() => setConfirmId(null)} className="text-xs rounded px-2 py-1 border border-[var(--color-border)] hover:bg-[var(--color-border-subtle)]">No</button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-end gap-3">
+                            <button onClick={() => startEdit(p)} className="text-xs text-[var(--color-primary)] hover:underline">Edit</button>
+                            <button onClick={() => { setConfirmId(p.id); setMsg(null); }} className="text-xs text-[var(--color-danger)] hover:underline">Delete</button>
+                          </div>
+                        )}
+                      </td>
                     </tr>
                   ))}
                   {programs.length === 0 ? (
-                    <tr><td colSpan={4} className="py-6 text-center text-[var(--color-text-muted)]">No programs yet.</td></tr>
+                    <tr><td colSpan={5} className="py-6 text-center text-[var(--color-text-muted)]">No programs yet.</td></tr>
                   ) : null}
                 </tbody>
               </table>
@@ -102,7 +163,7 @@ export default function ProgramsPage() {
         <div className="lg:col-span-2">
           <Card variant="elevated">
             <CardHeader>
-              <CardTitle>Add program</CardTitle>
+              <CardTitle>{editingId ? 'Edit program' : 'Add program'}</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={submit} className="flex flex-col gap-3">
@@ -123,9 +184,16 @@ export default function ProgramsPage() {
                     <option value="false">Inactive</option>
                   </Select>
                 </Field>
-                <button type="submit" className="mt-1 rounded-md bg-[var(--color-primary)] text-white px-4 py-2.5 font-medium hover:bg-[var(--color-primary-hover)]">
-                  Create program
-                </button>
+                <div className="flex gap-2">
+                  <button type="submit" className="flex-1 rounded-md bg-[var(--color-primary)] text-white px-4 py-2.5 font-medium hover:bg-[var(--color-primary-hover)]">
+                    {editingId ? 'Save changes' : 'Create program'}
+                  </button>
+                  {editingId ? (
+                    <button type="button" onClick={cancelEdit} className="rounded-md border border-[var(--color-border)] px-4 py-2.5 hover:bg-[var(--color-border-subtle)]">
+                      Cancel
+                    </button>
+                  ) : null}
+                </div>
               </form>
             </CardContent>
           </Card>
