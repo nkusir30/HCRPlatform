@@ -111,9 +111,12 @@ export default function EmployeesPage() {
               <CardTitle>Roster ({employees.length})</CardTitle>
             </CardHeader>
             <CardContent className="overflow-x-auto">
-              <table className="w-full text-sm">
+              {/* Fixed-height scroll area so a 100+ person roster stays navigable;
+                  the header row sticks while scrolling. */}
+              <div className="max-h-[70vh] overflow-y-auto">
+                <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-[var(--color-text-muted)] border-b border-[var(--color-border)]">
+                  <tr className="text-left text-[var(--color-text-muted)] border-b border-[var(--color-border)] sticky top-0 bg-white shadow-[0_1px_0_0_var(--color-border)]">
                     <th className="py-2 pr-3">Code</th>
                     <th className="py-2 pr-3">Name</th>
                     <th className="py-2 pr-3">Email</th>
@@ -151,6 +154,7 @@ export default function EmployeesPage() {
                   ) : null}
                 </tbody>
               </table>
+              </div>
             </CardContent>
           </Card>
         </div>

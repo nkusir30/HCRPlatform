@@ -21,7 +21,7 @@ import {
   type SyncResult,
 } from './sync';
 
-const STORAGE_KEY = 'hcr_app_state_v1';
+const STORAGE_KEY = 'hcr_app_state_v2';
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'local-only';
 

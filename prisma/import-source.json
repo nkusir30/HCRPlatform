@@ -1,17 +1,974 @@
 [
-  { "employeeCode": "HCR-1001", "firstName": "Danielle", "lastName": "Bourque", "email": "danielle.bourque@hrv-homes.com", "phone": "2075550101", "employmentStatus": "full-time", "hireDate": "2021-02-15" },
-  { "employeeCode": "HCR-1002", "firstName": "Marcus", "lastName": "Thibodeau", "email": "marcus.thibodeau@hrv-homes.com", "phone": "2075550102", "employmentStatus": "full-time", "hireDate": "2020-09-01" },
-  { "employeeCode": "HCR-1003", "firstName": "Priya", "lastName": "Raman", "email": "priya.raman@hrv-homes.com", "phone": "2075550103", "employmentStatus": "part-time", "hireDate": "2022-06-20" },
-  { "employeeCode": "HCR-1004", "firstName": "Omar", "lastName": "Haddad", "email": "omar.haddad@hrv-homes.com", "phone": "2075550104", "employmentStatus": "full-time", "hireDate": "2019-11-11" },
-  { "employeeCode": "HCR-1005", "firstName": "Grace", "lastName": "Mbeki", "email": "grace.mbeki@hrv-homes.com", "phone": "2075550105", "employmentStatus": "part-time", "hireDate": "2023-01-09" },
-  { "employeeCode": "HCR-1006", "firstName": "Tyler", "lastName": "Nowak", "email": "tyler.nowak@hrv-homes.com", "phone": "2075550106", "employmentStatus": "full-time", "hireDate": "2021-08-30" },
-  { "employeeCode": "HCR-1007", "firstName": "Sofia", "lastName": "Almeida", "email": "sofia.almeida@hrv-homes.com", "phone": "2075550107", "employmentStatus": "full-time", "hireDate": "2018-04-02" },
-  { "employeeCode": "HCR-1008", "firstName": "Jamal", "lastName": "Carter", "email": "jamal.carter@hrv-homes.com", "phone": "2075550108", "employmentStatus": "part-time", "hireDate": "2022-12-05" },
-  { "employeeCode": "HCR-1009", "firstName": "Elena", "lastName": "Petrova", "email": "elena.petrova@hrv-homes.com", "phone": "2075550109", "employmentStatus": "full-time", "hireDate": "2020-03-18" },
-  { "employeeCode": "HCR-1010", "firstName": "Nathan", "lastName": "Brooks", "email": "nathan.brooks@hrv-homes.com", "phone": "2075550110", "employmentStatus": "full-time", "hireDate": "2017-07-24" },
-  { "employeeCode": "HCR-1011", "firstName": "Aaliyah", "lastName": "Johnson", "email": "aaliyah.johnson@hrv-homes.com", "phone": "2075550111", "employmentStatus": "part-time", "hireDate": "2023-05-15" },
-  { "employeeCode": "HCR-1012", "firstName": "Wei", "lastName": "Zhang", "email": "wei.zhang@hrv-homes.com", "phone": "2075550112", "employmentStatus": "full-time", "hireDate": "2021-10-04" },
-  { "employeeCode": "HCR-1013", "firstName": "Bridget", "lastName": "O'Sullivan", "email": "bridget.osullivan@hrv-homes.com", "phone": "2075550113", "employmentStatus": "full-time", "hireDate": "2019-01-21" },
-  { "employeeCode": "HCR-1014", "firstName": "Diego", "lastName": "Fernandez", "email": "diego.fernandez@hrv-homes.com", "phone": "2075550114", "employmentStatus": "part-time", "hireDate": "2022-02-28" },
-  { "employeeCode": "HCR-1015", "firstName": "Hannah", "lastName": "Kim", "email": "hannah.kim@hrv-homes.com", "phone": "2075550115", "employmentStatus": "full-time", "hireDate": "2020-06-08" }
+  {
+    "employeeCode": "HCR-1001",
+    "firstName": "Johnson",
+    "lastName": "Safari",
+    "email": "johnson.safari@hcrmaine.com",
+    "phone": "9173278032",
+    "employmentStatus": "full-time",
+    "hireDate": "2025-12-08"
+  },
+  {
+    "employeeCode": "HCR-1002",
+    "firstName": "Agnes",
+    "lastName": "Niyongere",
+    "email": "AgnesNiyongere@gmail.com",
+    "phone": "2073034973",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-03-17"
+  },
+  {
+    "employeeCode": "HCR-1003",
+    "firstName": "Alexis",
+    "lastName": "Nsindagiza",
+    "email": "alexisnsindagiza@gmail.com",
+    "phone": "5854902235",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1004",
+    "firstName": "Alfred",
+    "lastName": "Mugiraneza",
+    "email": "mugid2021@gmail.com",
+    "phone": "4437393399",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1005",
+    "firstName": "Aline",
+    "lastName": "Gisubizo",
+    "email": "AlineGisubizo@gmail.com",
+    "phone": "2073034984",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-03-06"
+  },
+  {
+    "employeeCode": "HCR-1006",
+    "firstName": "Aline",
+    "lastName": "Bizimana",
+    "email": "Alinegasuzuguro1234@gmail.com",
+    "phone": "2077991841",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1007",
+    "firstName": "Allen",
+    "lastName": "Iribagiza",
+    "email": "AllenIribagiza@gmail.com",
+    "phone": "2073034972",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-03-16"
+  },
+  {
+    "employeeCode": "HCR-1008",
+    "firstName": "Alliance",
+    "lastName": "Uwase",
+    "email": "allianceuwase03@gmail.com",
+    "phone": "9013368587",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1009",
+    "firstName": "Amy",
+    "lastName": "Hicks",
+    "email": "Admin@hcrmaine.com",
+    "phone": "2079496002",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1010",
+    "firstName": "Arnold",
+    "lastName": "Nyiringabo",
+    "email": "ArnoldNyiringabo@gmail.com",
+    "phone": "2073034980",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-03-23"
+  },
+  {
+    "employeeCode": "HCR-1011",
+    "firstName": "Ashlie",
+    "lastName": "Philbrick",
+    "email": "philbrickashlie@gmail.com",
+    "phone": "2073232574",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1012",
+    "firstName": "Avit",
+    "lastName": "Kayumba",
+    "email": "avitk30@gmail.com",
+    "phone": "6823801122",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-02-16"
+  },
+  {
+    "employeeCode": "HCR-1013",
+    "firstName": "Beathe",
+    "lastName": "Umuhoza",
+    "email": "bmwigeme@yahoo.fr",
+    "phone": "3368400496",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1014",
+    "firstName": "Bienfait",
+    "lastName": "Muragwa",
+    "email": "mupatron1988@gmail.com",
+    "phone": "3196930971",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1015",
+    "firstName": "Bienvenue",
+    "lastName": "Birama",
+    "email": "johnson.safari+1@hcrmaine.com",
+    "phone": "2073034959",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-03-23"
+  },
+  {
+    "employeeCode": "HCR-1016",
+    "firstName": "Bigiritsibo",
+    "lastName": "Mukundwa",
+    "email": "bigiritsibomukundwa541@gmail.com",
+    "phone": "3173415832",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1017",
+    "firstName": "Casey",
+    "lastName": "Williams",
+    "email": "cwilliams@hcrmaine.com",
+    "phone": "2078528524",
+    "employmentStatus": "full-time",
+    "hireDate": "2025-12-08"
+  },
+  {
+    "employeeCode": "HCR-1018",
+    "firstName": "cedrick",
+    "lastName": "Rweza",
+    "email": "cedrickRweza@GMAIL.COM",
+    "phone": "2073034982",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-02-16"
+  },
+  {
+    "employeeCode": "HCR-1019",
+    "firstName": "Chantal",
+    "lastName": "Mutesi",
+    "email": "Chantalmutesi@gmail.com",
+    "phone": "5026152534",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1020",
+    "firstName": "Charles",
+    "lastName": "Ruhumriza",
+    "email": "johnson.safari+3@hcrmaine.com",
+    "phone": "2073034961",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1021",
+    "firstName": "Charles",
+    "lastName": "Ntebutsi",
+    "email": "cntebutsi@gmail.com",
+    "phone": "8064443360",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1022",
+    "firstName": "Christine",
+    "lastName": "mwubahamana",
+    "email": "Christinemwubahamana@gmail.com",
+    "phone": "2073034971",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-03-16"
+  },
+  {
+    "employeeCode": "HCR-1023",
+    "firstName": "Claudine",
+    "lastName": "Umutoni",
+    "email": "umutoniclaune99@gmail.com",
+    "phone": "5028852840",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1024",
+    "firstName": "Clemance",
+    "lastName": "Uwase",
+    "email": "demenceuwase825@gmail.com",
+    "phone": "6163816522",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1025",
+    "firstName": "Denise",
+    "lastName": "Lagasse",
+    "email": "denijo816@gmail.com",
+    "phone": "2072909405",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-02-16"
+  },
+  {
+    "employeeCode": "HCR-1026",
+    "firstName": "Destin",
+    "lastName": "Mahirwe",
+    "email": "mahirwedestin09@gmail.com",
+    "phone": "3176040958",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-02-16"
+  },
+  {
+    "employeeCode": "HCR-1027",
+    "firstName": "Drocella",
+    "lastName": "Masengesho",
+    "email": "Dorcella@gmail.com",
+    "phone": "2145634711",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1028",
+    "firstName": "Eliya",
+    "lastName": "Budugure",
+    "email": "mahizibudu@gmail.com",
+    "phone": "2073034947",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-02-16"
+  },
+  {
+    "employeeCode": "HCR-1029",
+    "firstName": "Emile",
+    "lastName": "Tubirore",
+    "email": "EmileTubirore@gmail.com",
+    "phone": "2073034976",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-03-17"
+  },
+  {
+    "employeeCode": "HCR-1030",
+    "firstName": "Emmanuel",
+    "lastName": "Muturutsa",
+    "email": "muturutsaemmanuel@gmail.com",
+    "phone": "2086977215",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1031",
+    "firstName": "Emmanuel",
+    "lastName": "Runezerwa",
+    "email": "runezerwae@gmail.com",
+    "phone": "8065678703",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1032",
+    "firstName": "eric",
+    "lastName": "Ndagijimana",
+    "email": "ericndagijimana@gmail.com",
+    "phone": "5025925907",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1033",
+    "firstName": "Eric",
+    "lastName": "Serugaba",
+    "email": "ericserugaba606@gmail.com",
+    "phone": "3156405617",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1034",
+    "firstName": "Eric",
+    "lastName": "Rwisunga",
+    "email": "johnson.safari+2@hcrmaine.com",
+    "phone": "2073034960",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-03-23"
+  },
+  {
+    "employeeCode": "HCR-1035",
+    "firstName": "Eustache",
+    "lastName": "Niyombikesha",
+    "email": "eniyombikesha@gmail.com",
+    "phone": "3127789530",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1036",
+    "firstName": "Fidele",
+    "lastName": "Murwanashaka",
+    "email": "fideleshaka@gmail.com",
+    "phone": "3362544425",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1037",
+    "firstName": "Francis",
+    "lastName": "Gisore",
+    "email": "FrancisGisore@gmail.com",
+    "phone": "2073034966",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-03-23"
+  },
+  {
+    "employeeCode": "HCR-1038",
+    "firstName": "Franck",
+    "lastName": "Hubiri",
+    "email": "hubirifranck@gmail.com",
+    "phone": "6165944938",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-02-16"
+  },
+  {
+    "employeeCode": "HCR-1039",
+    "firstName": "Franck",
+    "lastName": "Mbarushamahaoro",
+    "email": "Franckmbarushamahoro@gmail.com",
+    "phone": "5123186135",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1040",
+    "firstName": "Gael",
+    "lastName": "Mududa",
+    "email": "GaelMududa@gmail.com",
+    "phone": "2073034983",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-02-16"
+  },
+  {
+    "employeeCode": "HCR-1041",
+    "firstName": "Gedeon",
+    "lastName": "Nkinzingabo Ruhanda",
+    "email": "gedeomee@gmail.com",
+    "phone": "4633257069",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1042",
+    "firstName": "Germaine",
+    "lastName": "Kabatesi",
+    "email": "Tesigermaine@gmail.com",
+    "phone": "9045772284",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1043",
+    "firstName": "Gertrude",
+    "lastName": "Ndayisaba",
+    "email": "saba66getty@gmail.com",
+    "phone": "3256683555",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-03-09"
+  },
+  {
+    "employeeCode": "HCR-1044",
+    "firstName": "Gloire",
+    "lastName": "Kabatiza",
+    "email": "gloirekabatiza7@gmail.com",
+    "phone": "2074158656",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1045",
+    "firstName": "Grace",
+    "lastName": "Uwera",
+    "email": "uweragaga@yahoo.com",
+    "phone": "2073034956",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-03-09"
+  },
+  {
+    "employeeCode": "HCR-1046",
+    "firstName": "Hassani",
+    "lastName": "Mufaume",
+    "email": "hassanimufaume20@gmail.com",
+    "phone": "6163344727",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1047",
+    "firstName": "Illuminee",
+    "lastName": "Umutoni",
+    "email": "umutonilluminee1@gmail.com",
+    "phone": "6163235803",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1048",
+    "firstName": "Immaculee",
+    "lastName": "Nyirabeza",
+    "email": "emma.beza@gmail.com",
+    "phone": "4343654320",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1049",
+    "firstName": "Innocent",
+    "lastName": "Rusamarirwa",
+    "email": "rusamarirwai@gmail.com",
+    "phone": "6163229310",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-02-16"
+  },
+  {
+    "employeeCode": "HCR-1050",
+    "firstName": "Innocent",
+    "lastName": "Ndayishimiye",
+    "email": "InnocentNdayishimiye@gmail.com",
+    "phone": "2073034970",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-03-23"
+  },
+  {
+    "employeeCode": "HCR-1051",
+    "firstName": "Innocent",
+    "lastName": "Ndayishimiye Prince",
+    "email": "innocentndayishimiye002@gmail.com",
+    "phone": "3174863727",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1052",
+    "firstName": "Innocent",
+    "lastName": "Mahirwe Mvuyekure",
+    "email": "mahirweinnoc@gmail.com",
+    "phone": "8065765349",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1053",
+    "firstName": "Irene",
+    "lastName": "batamuriza",
+    "email": "irenerwubaka@gmail.com",
+    "phone": "9012476208",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1054",
+    "firstName": "Issa",
+    "lastName": "Aman",
+    "email": "amanissa250@gmail.com",
+    "phone": "5029018412",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1055",
+    "firstName": "Jacques",
+    "lastName": "Ndahuna",
+    "email": "jndahuna@gmail.com",
+    "phone": "3174574517",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1056",
+    "firstName": "James",
+    "lastName": "Harindintwari",
+    "email": "jamesharindintwari@gmail.com",
+    "phone": "2072992538",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1057",
+    "firstName": "Janette",
+    "lastName": "Nyiramwiza",
+    "email": "mwizajanette495@gmail.com",
+    "phone": "9074446780",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1058",
+    "firstName": "Jean",
+    "lastName": "claude Iranzi",
+    "email": "iranzikiyan@gmail.com",
+    "phone": "3178456716",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1059",
+    "firstName": "Joel",
+    "lastName": "Muheto",
+    "email": "cwilliams26@hcrmaine.com",
+    "phone": "9174365147",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1060",
+    "firstName": "Joseph",
+    "lastName": "Mupuru",
+    "email": "mupurijoseph@gmail.com",
+    "phone": "5025981961",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1061",
+    "firstName": "Joseph",
+    "lastName": "Ndayisenga",
+    "email": "brojoenjoni@gmail.com",
+    "phone": "2233445561",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1062",
+    "firstName": "Joseph",
+    "lastName": "Masomo",
+    "email": "josephmasomo77@gmail.com",
+    "phone": "3174738153",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1063",
+    "firstName": "Josiane",
+    "lastName": "Uwase",
+    "email": "uwasejosiane@gmail.com",
+    "phone": "5024083130",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1064",
+    "firstName": "Josue",
+    "lastName": "Muhumure",
+    "email": "johnson.safari+6@hcrmaine.com",
+    "phone": "2073034964",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-03-23"
+  },
+  {
+    "employeeCode": "HCR-1065",
+    "firstName": "Justin",
+    "lastName": "Ndizeye",
+    "email": "ndizeyejustin0@gmail.com",
+    "phone": "9047316454",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-02-16"
+  },
+  {
+    "employeeCode": "HCR-1066",
+    "firstName": "Justine",
+    "lastName": "Mugeni",
+    "email": "mugenij04@gmail.com",
+    "phone": "5028769625",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1067",
+    "firstName": "Kaleb",
+    "lastName": "Ndikumana",
+    "email": "kalebndikumanag@gmail.com",
+    "phone": "5157234673",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1068",
+    "firstName": "Katie",
+    "lastName": "Tuyisenge",
+    "email": "katietuyisenge22@gmail.com",
+    "phone": "6163238959",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1069",
+    "firstName": "Kennedy",
+    "lastName": "Rukundo",
+    "email": "chriskeng1@gmail.com",
+    "phone": "8163095495",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1070",
+    "firstName": "Kijenga",
+    "lastName": "Rukiranya",
+    "email": "akijenga@gmail.com",
+    "phone": "9194484525",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1071",
+    "firstName": "Leila",
+    "lastName": "Tuyisenge",
+    "email": "leilatuyisenge22@gmail.com",
+    "phone": "6162822387",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1072",
+    "firstName": "Liam",
+    "lastName": "Nkunda",
+    "email": "nkundaliam@gmail.com",
+    "phone": "9377975570",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1073",
+    "firstName": "Marie",
+    "lastName": "Josee Mushimiyimana",
+    "email": "Mushimiyimanamariejo@gmail.com",
+    "phone": "2077359061",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1074",
+    "firstName": "Merci",
+    "lastName": "Ndahiriwe",
+    "email": "dabrucekingungwa@gmail.com",
+    "phone": "6162903774",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-02-16"
+  },
+  {
+    "employeeCode": "HCR-1075",
+    "firstName": "Mereweneza",
+    "lastName": "Ngirumuvugizi",
+    "email": "mupoctavo16@gmail.com",
+    "phone": "9375034290",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1076",
+    "firstName": "michael",
+    "lastName": "mbonyimfura",
+    "email": "michaelmbonyi@gmail.com",
+    "phone": "6059269126",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1077",
+    "firstName": "Micheline",
+    "lastName": "mukamisha",
+    "email": "bijouangel04@gmailcom",
+    "phone": "3192109387",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1078",
+    "firstName": "Moise",
+    "lastName": "Kadage",
+    "email": "moisekadage@gmail.com",
+    "phone": "8573989899",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1079",
+    "firstName": "Mulisa",
+    "lastName": "Uwimana",
+    "email": "uwimanamulisa250@gmail.com",
+    "phone": "5023098939",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1080",
+    "firstName": "Muragizi",
+    "lastName": "Miramba",
+    "email": "johnson.safari+4@hcrmaine.com",
+    "phone": "2073034962",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-03-27"
+  },
+  {
+    "employeeCode": "HCR-1081",
+    "firstName": "Napoleon",
+    "lastName": "Bigirango",
+    "email": "bigirangonapoleon@gmail.com",
+    "phone": "2079228562",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1082",
+    "firstName": "Ndagiro",
+    "lastName": "David",
+    "email": "dmdagiro@gmail.com",
+    "phone": "5187049678",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1083",
+    "firstName": "Ndakize",
+    "lastName": "Systeme",
+    "email": "ndakizesysteme2@gmail.com",
+    "phone": "2482754081",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1084",
+    "firstName": "ndanyuzwe",
+    "lastName": "muhumure",
+    "email": "ndayunzwe5@gmail.com",
+    "phone": "3175317605",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1085",
+    "firstName": "Ndaruhutse",
+    "lastName": "Espoir",
+    "email": "espoirndaruhutse22@gmail.com",
+    "phone": "8174956780",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1086",
+    "firstName": "Ngoga",
+    "lastName": "Binki",
+    "email": "ngogabinki@gmail.com",
+    "phone": "4323088412",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1087",
+    "firstName": "Nick",
+    "lastName": "Bragg",
+    "email": "Nbragg1980@gmail.com",
+    "phone": "2072759650",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1088",
+    "firstName": "Nobel",
+    "lastName": "Rugo",
+    "email": "nobelrugo2018@gmail.com",
+    "phone": "2079109911",
+    "employmentStatus": "full-time",
+    "hireDate": "2025-12-08"
+  },
+  {
+    "employeeCode": "HCR-1089",
+    "firstName": "Nowa",
+    "lastName": "Shema",
+    "email": "Sjnowa36@gmail.com",
+    "phone": "9204280153",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1090",
+    "firstName": "Octave",
+    "lastName": "Kalinda",
+    "email": "Octacare7@gmail.com",
+    "phone": "9378256434",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1091",
+    "firstName": "Osee",
+    "lastName": "Byishimo",
+    "email": "byishimooseee@gmail.com",
+    "phone": "4135175600",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1092",
+    "firstName": "Pacifique",
+    "lastName": "Muhumure",
+    "email": "muhumurepacifique63@gmail.com",
+    "phone": "3177785946",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1093",
+    "firstName": "Rachel",
+    "lastName": "Mukasine",
+    "email": "rachelmu297@gmail.com",
+    "phone": "8172660416",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1094",
+    "firstName": "Richard",
+    "lastName": "Kimazi",
+    "email": "rkimazi@legendsmaine.care",
+    "phone": "7164247268",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1095",
+    "firstName": "Roben",
+    "lastName": "nshimiyimana",
+    "email": "nshimiyimanaroben@gmail.com",
+    "phone": "9014805829",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1096",
+    "firstName": "ronald",
+    "lastName": "nkusi",
+    "email": "hcr@hcrmaine.com",
+    "phone": "2073034945",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1097",
+    "firstName": "Ruhara",
+    "lastName": "Vincent",
+    "email": "vincentruhara59@gmail.com",
+    "phone": "5189778661",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1098",
+    "firstName": "Ruphin",
+    "lastName": "Muhaya",
+    "email": "rmuhaya7@gmail.com",
+    "phone": "8607106770",
+    "employmentStatus": "full-time",
+    "hireDate": "2025-12-08"
+  },
+  {
+    "employeeCode": "HCR-1099",
+    "firstName": "Said",
+    "lastName": "Hakizimana",
+    "email": "SaidHakizimana@gmail.com",
+    "phone": "2073034975",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-03-16"
+  },
+  {
+    "employeeCode": "HCR-1100",
+    "firstName": "Salomon",
+    "lastName": "Ndayishimiye",
+    "email": "ndasalomon40@gmail.com",
+    "phone": "5137255011",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1101",
+    "firstName": "Salomon",
+    "lastName": "Rwinikiza",
+    "email": "salmomrwinikiza@gmail.com",
+    "phone": "5026812570",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1102",
+    "firstName": "Sam",
+    "lastName": "Mutabazi",
+    "email": "mutabazisam93@gmail.com",
+    "phone": "2073034958",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-03-25"
+  },
+  {
+    "employeeCode": "HCR-1103",
+    "firstName": "Simeon",
+    "lastName": "Ruvindagaza",
+    "email": "SimeonRuvindagaza@gmial.com",
+    "phone": "2073034967",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-03-17"
+  },
+  {
+    "employeeCode": "HCR-1104",
+    "firstName": "Thierry",
+    "lastName": "Muhire",
+    "email": "thierrymuhire7@gmail.com",
+    "phone": "2154328455",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1105",
+    "firstName": "Tresor",
+    "lastName": "irakoze",
+    "email": "samytresor00@gmail.com",
+    "phone": "7177360879",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1106",
+    "firstName": "Yves",
+    "lastName": "Ndanyuzwe",
+    "email": "ndanyuzweyves1@gmail.com",
+    "phone": "5023436078",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1107",
+    "firstName": "Yves",
+    "lastName": "Tuyisenge",
+    "email": "yvestuyis2@gmail.com",
+    "phone": "6238824827",
+    "employmentStatus": "full-time",
+    "hireDate": ""
+  },
+  {
+    "employeeCode": "HCR-1108",
+    "firstName": "Zachary",
+    "lastName": "Gaudet",
+    "email": "15gaudetz@gmail.com",
+    "phone": "2078897806",
+    "employmentStatus": "full-time",
+    "hireDate": "2026-02-16"
+  }
 ]
