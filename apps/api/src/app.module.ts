@@ -24,6 +24,7 @@ import { WebhookModule } from './webhooks/webhook.module';
 import { DatabaseModule } from './database/database.module';
 import { CommonModule } from './common/common.module';
 import { MemoryModule } from './memory/memory.module';
+import { ImportUsersEmployeesModule } from './import/import-users-employees.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { MemoryModule } from './memory/memory.module';
     DatabaseModule,
     CommonModule,
     MemoryModule,
+    ImportUsersEmployeesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

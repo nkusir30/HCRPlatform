@@ -85,12 +85,15 @@ export class ApprovalService {
     const entries = await this.prisma.timesheetEntry.findMany({
       where: { timesheetId: publicId },
     });
-    const totals = entries.reduce((acc, e) => {
-      acc.hours += e.durationHours ?? 0;
-      acc.regular += e.durationHours ?? 0;
-      acc.overtime += e.durationHours ?? 0;
-      return acc;
-    }, { hours: 0, regular: 0, overtime: 0 });
+    const totals = entries.reduce<{ hours: number; regular: number; overtime: number }>(
+      (acc, e) => {
+        acc.hours += e.durationHours ?? 0;
+        acc.regular += e.durationHours ?? 0;
+        acc.overtime += e.durationHours ?? 0;
+        return acc;
+      },
+      { hours: 0, regular: 0, overtime: 0 },
+    );
     const computedHash = await this.hashSnapshot(JSON.stringify(totals));
     if (computedHash !== dto.totalsHash) throw new ForbiddenException('Timings hash mismatch');
     return this.prisma.timesheet.update({

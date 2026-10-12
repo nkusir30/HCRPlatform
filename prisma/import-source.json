@@ -1,0 +1,17 @@
+[
+  { "employeeCode": "HCR-1001", "firstName": "Danielle", "lastName": "Bourque", "email": "danielle.bourque@hrv-homes.com", "phone": "2075550101", "employmentStatus": "full-time", "hireDate": "2021-02-15" },
+  { "employeeCode": "HCR-1002", "firstName": "Marcus", "lastName": "Thibodeau", "email": "marcus.thibodeau@hrv-homes.com", "phone": "2075550102", "employmentStatus": "full-time", "hireDate": "2020-09-01" },
+  { "employeeCode": "HCR-1003", "firstName": "Priya", "lastName": "Raman", "email": "priya.raman@hrv-homes.com", "phone": "2075550103", "employmentStatus": "part-time", "hireDate": "2022-06-20" },
+  { "employeeCode": "HCR-1004", "firstName": "Omar", "lastName": "Haddad", "email": "omar.haddad@hrv-homes.com", "phone": "2075550104", "employmentStatus": "full-time", "hireDate": "2019-11-11" },
+  { "employeeCode": "HCR-1005", "firstName": "Grace", "lastName": "Mbeki", "email": "grace.mbeki@hrv-homes.com", "phone": "2075550105", "employmentStatus": "part-time", "hireDate": "2023-01-09" },
+  { "employeeCode": "HCR-1006", "firstName": "Tyler", "lastName": "Nowak", "email": "tyler.nowak@hrv-homes.com", "phone": "2075550106", "employmentStatus": "full-time", "hireDate": "2021-08-30" },
+  { "employeeCode": "HCR-1007", "firstName": "Sofia", "lastName": "Almeida", "email": "sofia.almeida@hrv-homes.com", "phone": "2075550107", "employmentStatus": "full-time", "hireDate": "2018-04-02" },
+  { "employeeCode": "HCR-1008", "firstName": "Jamal", "lastName": "Carter", "email": "jamal.carter@hrv-homes.com", "phone": "2075550108", "employmentStatus": "part-time", "hireDate": "2022-12-05" },
+  { "employeeCode": "HCR-1009", "firstName": "Elena", "lastName": "Petrova", "email": "elena.petrova@hrv-homes.com", "phone": "2075550109", "employmentStatus": "full-time", "hireDate": "2020-03-18" },
+  { "employeeCode": "HCR-1010", "firstName": "Nathan", "lastName": "Brooks", "email": "nathan.brooks@hrv-homes.com", "phone": "2075550110", "employmentStatus": "full-time", "hireDate": "2017-07-24" },
+  { "employeeCode": "HCR-1011", "firstName": "Aaliyah", "lastName": "Johnson", "email": "aaliyah.johnson@hrv-homes.com", "phone": "2075550111", "employmentStatus": "part-time", "hireDate": "2023-05-15" },
+  { "employeeCode": "HCR-1012", "firstName": "Wei", "lastName": "Zhang", "email": "wei.zhang@hrv-homes.com", "phone": "2075550112", "employmentStatus": "full-time", "hireDate": "2021-10-04" },
+  { "employeeCode": "HCR-1013", "firstName": "Bridget", "lastName": "O'Sullivan", "email": "bridget.osullivan@hrv-homes.com", "phone": "2075550113", "employmentStatus": "full-time", "hireDate": "2019-01-21" },
+  { "employeeCode": "HCR-1014", "firstName": "Diego", "lastName": "Fernandez", "email": "diego.fernandez@hrv-homes.com", "phone": "2075550114", "employmentStatus": "part-time", "hireDate": "2022-02-28" },
+  { "employeeCode": "HCR-1015", "firstName": "Hannah", "lastName": "Kim", "email": "hannah.kim@hrv-homes.com", "phone": "2075550115", "employmentStatus": "full-time", "hireDate": "2020-06-08" }
+]

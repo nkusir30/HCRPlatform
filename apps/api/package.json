@@ -13,6 +13,7 @@
     "prisma_migrate": "prisma migrate dev",
     "prisma_reset": "prisma migrate reset --force",
     "db_seed": "ts-node -r tsconfig-paths/register prisma/seed.ts",
+    "import:users": "ts-node -r tsconfig-paths/register src/import/cli.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext ts --report-unused-disable-directives --max-warnings 0",
     "test": "jest",
