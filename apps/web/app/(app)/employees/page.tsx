@@ -19,6 +19,14 @@ const empty = {
 
 type FormState = typeof empty;
 
+// 10-digit US numbers render as (xxx) xxx-xxxx; anything else (or nothing)
+// stays exactly as stored — never invent a placeholder number.
+function formatPhone(raw: string): string {
+  const digits = (raw || '').replace(/\D/g, '');
+  if (digits.length === 10) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  return raw || '';
+}
+
 export default function EmployeesPage() {
   const { employees, companyId, addEmployee, updateEmployee, deleteEmployee } = useApp();
   const [form, setForm] = useState<FormState>({ ...empty });
@@ -71,7 +79,7 @@ export default function EmployeesPage() {
       firstName: form.firstName.trim(),
       lastName: form.lastName.trim(),
       email: form.email.trim(),
-      phone: form.phone.trim() || '0000000000',
+      phone: form.phone.trim(),
       employeeCode: form.employeeCode.trim(),
       employmentStatus: form.employmentStatus,
       hireDate: form.hireDate,
@@ -120,6 +128,7 @@ export default function EmployeesPage() {
                     <th className="py-2 pr-3">Code</th>
                     <th className="py-2 pr-3">Name</th>
                     <th className="py-2 pr-3">Email</th>
+                    <th className="py-2 pr-3">Phone</th>
                     <th className="py-2 pr-3">Status</th>
                     <th className="py-2 pr-3 text-right">Actions</th>
                   </tr>
@@ -130,6 +139,7 @@ export default function EmployeesPage() {
                       <td className="py-2 pr-3 font-mono text-xs">{e.employeeCode}</td>
                       <td className="py-2 pr-3">{e.firstName} {e.lastName}</td>
                       <td className="py-2 pr-3 text-[var(--color-text-secondary)]">{e.email}</td>
+                      <td className="py-2 pr-3 text-[var(--color-text-secondary)] whitespace-nowrap">{formatPhone(e.phone)}</td>
                       <td className="py-2 pr-3">
                         <Badge variant={e.isActive ? 'success' : 'default'} size="sm">{e.employmentStatus}</Badge>
                       </td>
@@ -150,7 +160,7 @@ export default function EmployeesPage() {
                     </tr>
                   ))}
                   {employees.length === 0 ? (
-                    <tr><td colSpan={5} className="py-6 text-center text-[var(--color-text-muted)]">No employees yet.</td></tr>
+                    <tr><td colSpan={6} className="py-6 text-center text-[var(--color-text-muted)]">No employees yet.</td></tr>
                   ) : null}
                 </tbody>
               </table>
