@@ -36,12 +36,14 @@ export default function EmployeesPage() {
   const [search, setSearch] = useState('');
 
   const q = search.trim().toLowerCase();
+  const qDigits = q.replace(/\D/g, '');
   const visible = q
-    ? employees.filter((e) =>
-        `${e.firstName} ${e.lastName}`.toLowerCase().includes(q) ||
-        e.email.toLowerCase().includes(q) ||
-        e.employeeCode.toLowerCase().includes(q) ||
-        (e.phone || '').replace(/\D/g, '').includes(q.replace(/\D/g, '')),
+    ? employees.filter(
+        (e) =>
+          `${e.firstName} ${e.lastName}`.toLowerCase().includes(q) ||
+          e.email.toLowerCase().includes(q) ||
+          e.employeeCode.toLowerCase().includes(q) ||
+          (qDigits !== '' && (e.phone || '').replace(/\D/g, '').includes(qDigits)),
       )
     : employees;
 
