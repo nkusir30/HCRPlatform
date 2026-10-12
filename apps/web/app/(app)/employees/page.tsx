@@ -33,6 +33,17 @@ export default function EmployeesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
+  const [search, setSearch] = useState('');
+
+  const q = search.trim().toLowerCase();
+  const visible = q
+    ? employees.filter((e) =>
+        `${e.firstName} ${e.lastName}`.toLowerCase().includes(q) ||
+        e.email.toLowerCase().includes(q) ||
+        e.employeeCode.toLowerCase().includes(q) ||
+        (e.phone || '').replace(/\D/g, '').includes(q.replace(/\D/g, '')),
+      )
+    : employees;
 
   function set(k: keyof FormState, v: string) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -116,7 +127,7 @@ export default function EmployeesPage() {
         <div className="lg:col-span-3">
           <Card>
             <CardHeader>
-              <CardTitle>Roster ({employees.length})</CardTitle>
+              <CardTitle>Roster ({visible.length}{q ? ` of ${employees.length}` : ''})</CardTitle>
             </CardHeader>
             <CardContent className="overflow-x-auto">
               {/* Fixed-height scroll area so a 100+ person roster stays navigable;
@@ -134,7 +145,7 @@ export default function EmployeesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {employees.map((e) => (
+                  {visible.map((e) => (
                     <tr key={e.id} className={`border-b border-[var(--color-border-subtle)] ${editingId === e.id ? 'bg-[var(--color-primary-light)]' : ''}`}>
                       <td className="py-2 pr-3 font-mono text-xs">{e.employeeCode}</td>
                       <td className="py-2 pr-3">{e.firstName} {e.lastName}</td>
@@ -159,8 +170,8 @@ export default function EmployeesPage() {
                       </td>
                     </tr>
                   ))}
-                  {employees.length === 0 ? (
-                    <tr><td colSpan={6} className="py-6 text-center text-[var(--color-text-muted)]">No employees yet.</td></tr>
+                  {visible.length === 0 ? (
+                    <tr><td colSpan={6} className="py-6 text-center text-[var(--color-text-muted)]">{q ? 'No employees match this search.' : 'No employees yet.'}</td></tr>
                   ) : null}
                 </tbody>
               </table>
