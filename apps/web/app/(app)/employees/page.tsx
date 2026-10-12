@@ -130,6 +130,13 @@ export default function EmployeesPage() {
               <CardTitle>Roster ({visible.length}{q ? ` of ${employees.length}` : ''})</CardTitle>
             </CardHeader>
             <CardContent className="overflow-x-auto">
+              <div className="mb-3">
+                <TextInput
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search name, email, code, or phone…"
+                  aria-label="Search employees" />
+              </div>
               {/* Fixed-height scroll area so a 100+ person roster stays navigable;
                   the header row sticks while scrolling. */}
               <div className="max-h-[70vh] overflow-y-auto">
@@ -171,7 +178,7 @@ export default function EmployeesPage() {
                     </tr>
                   ))}
                   {visible.length === 0 ? (
-                    <tr><td colSpan={6} className="py-6 text-center text-[var(--color-text-muted)]">{q ? 'No employees match this search.' : 'No employees yet.'}</td></tr>
+                    <tr><td colSpan={5} className="py-6 text-center text-[var(--color-text-muted)]">{q ? 'No employees match this search.' : 'No employees yet.'}</td></tr>
                   ) : null}
                 </tbody>
               </table>
