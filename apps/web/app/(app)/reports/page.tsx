@@ -25,44 +25,103 @@ const statusVariant: Record<string, BadgeProps['variant']> = {
 };
 
 export default function ReportsPage() {
-  const { reports, timesheets, employees, addReport, updateReport, deleteReport } = useApp();
-  const [form, setForm] = useState<{ type: ReportType; parameters: string }>({
-    type: 'payroll-summary',
-    parameters: '',
-  });
+  const { reports, timesheets, employees, houses, addReport, updateReport, deleteReport } = useApp();
+  const [reportType, setReportType] = useState<ReportType>('payroll-summary');
+  const [parameters, setParameters] = useState('');
+  const [employeeId, setEmployeeId] = useState('all');
+  const [houseId, setHouseId] = useState('all');
+  const [period, setPeriod] = useState<'current' | 'weekly' | 'biweekly' | 'custom'>('current');
+  const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [endDate, setEndDate] = useState('');
+  const [notes, setNotes] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
 
+  const useStructured = reportType === 'timesheet' || reportType === 'attendance';
+  const typeLabel = REPORT_TYPES.find((t) => t.value === reportType)?.label ?? reportType;
+
+  const sortedEmployees = [...employees].sort((a, b) =>
+    `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`),
+  );
+  const employee = employees.find((x) => x.id === employeeId);
+  const house = houses.find((x) => x.id === houseId);
+
+  function addDays(iso: string, days: number): string {
+    const d = new Date(`${iso}T00:00:00`);
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+  }
+
+  // The exact text that will be saved as the report's parameters.
+  function previewParams(): string {
+    if (!useStructured) return parameters.trim() || 'Current period, all employees';
+    const who = employee ? `${employee.firstName} ${employee.lastName} (${employee.employeeCode})` : 'All employees';
+    const where = house ? `${house.name} (${house.code})` : 'All houses';
+    const when =
+      period === 'current'
+        ? 'Current period'
+        : period === 'weekly'
+          ? `Weekly, ${startDate} to ${addDays(startDate, 6)}`
+          : period === 'biweekly'
+            ? `Biweekly, ${startDate} to ${addDays(startDate, 13)}`
+            : `Custom, ${startDate} to ${endDate || startDate}`;
+    const extra = notes.trim() ? ` — ${notes.trim()}` : '';
+    return `${typeLabel}: ${who}; ${where}; ${when}${extra}`;
+  }
+
   const totalHours = timesheets.reduce((s, t) => s + t.hours, 0);
   const approvedHours = timesheets.filter((t) => t.status === 'approved').reduce((s, t) => s + t.hours, 0);
+
+  function resetStructured() {
+    setEmployeeId('all');
+    setHouseId('all');
+    setPeriod('current');
+    setStartDate(new Date().toISOString().slice(0, 10));
+    setEndDate('');
+    setNotes('');
+  }
 
   function startEdit(r: Report) {
     setEditingId(r.id);
     setConfirmId(null);
     setMsg(null);
-    setForm({ type: r.type, parameters: r.parameters });
+    setReportType(r.type);
+    setParameters(r.parameters);
+    resetStructured();
   }
 
   function cancelEdit() {
     setEditingId(null);
     setMsg(null);
-    setForm({ type: 'payroll-summary', parameters: '' });
+    setReportType('payroll-summary');
+    setParameters('');
+    resetStructured();
   }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
-    const parameters = form.parameters.trim() || 'Current period, all employees';
+    if (useStructured && !editingId) {
+      if (period === 'custom' && endDate && endDate < startDate) {
+        setMsg({ kind: 'error', text: 'End date must be on or after the start date.' });
+        return;
+      }
+      addReport({ type: reportType, parameters: previewParams() });
+      setMsg({ kind: 'success', text: 'Report requested. It will appear below as pending.' });
+      resetStructured();
+      return;
+    }
+    const params = parameters.trim() || 'Current period, all employees';
     if (editingId) {
-      updateReport(editingId, { type: form.type, parameters });
+      updateReport(editingId, { type: reportType, parameters: params });
       setMsg({ kind: 'success', text: 'Report updated.' });
       cancelEdit();
       return;
     }
-    addReport({ type: form.type, parameters });
+    addReport({ type: reportType, parameters: params });
     setMsg({ kind: 'success', text: 'Report requested. It will appear below as pending.' });
-    setForm((f) => ({ ...f, parameters: '' }));
+    setParameters('');
   }
 
   function confirmDelete() {
@@ -150,13 +209,64 @@ export default function ReportsPage() {
               <form onSubmit={submit} className="flex flex-col gap-3">
                 {msg ? <Alert kind={msg.kind}>{msg.text}</Alert> : null}
                 <Field label="Report type">
-                  <Select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as ReportType }))}>
+                  <Select value={reportType} onChange={(e) => setReportType(e.target.value as ReportType)}>
                     {REPORT_TYPES.map((t) => (<option key={t.value} value={t.value}>{t.label}</option>))}
                   </Select>
                 </Field>
-                <Field label="Parameters" hint="Optional — defaults to current period, all employees">
-                  <TextInput value={form.parameters} onChange={(e) => setForm((f) => ({ ...f, parameters: e.target.value }))} placeholder="e.g. Period 2026-10-01 to 2026-10-15" />
-                </Field>
+                {useStructured && !editingId ? (
+                  <>
+                    <Field label="Employee" hint="One person, or everyone">
+                      <Select value={employeeId} onChange={(e) => setEmployeeId(e.target.value)}>
+                        <option value="all">All employees</option>
+                        {sortedEmployees.map((x) => (
+                          <option key={x.id} value={x.id}>{x.firstName} {x.lastName} — {x.employeeCode}</option>
+                        ))}
+                      </Select>
+                    </Field>
+                    <Field label="House" hint="One house, or every house">
+                      <Select value={houseId} onChange={(e) => setHouseId(e.target.value)}>
+                        <option value="all">All houses</option>
+                        {houses.map((x) => (
+                          <option key={x.id} value={x.id}>{x.name} — {x.code}</option>
+                        ))}
+                      </Select>
+                    </Field>
+                    <Field label="Duration">
+                      <Select value={period} onChange={(e) => setPeriod(e.target.value as typeof period)}>
+                        <option value="current">Current period</option>
+                        <option value="weekly">Weekly (7 days from start)</option>
+                        <option value="biweekly">Biweekly (14 days from start)</option>
+                        <option value="custom">Custom range</option>
+                      </Select>
+                    </Field>
+                    {period !== 'current' ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        <Field label="Start date">
+                          <TextInput type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                        </Field>
+                        {period === 'custom' ? (
+                          <Field label="End date">
+                            <TextInput type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                          </Field>
+                        ) : (
+                          <Field label="End date (auto)">
+                            <TextInput type="date" value={addDays(startDate, period === 'weekly' ? 6 : 13)} disabled />
+                          </Field>
+                        )}
+                      </div>
+                    ) : null}
+                    <Field label="Notes" hint="Optional">
+                      <TextInput value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. include overtime only" />
+                    </Field>
+                    <p className="text-xs text-[var(--color-text-secondary)] rounded-md bg-[var(--color-border-subtle)] px-3 py-2">
+                      Request: {previewParams()}
+                    </p>
+                  </>
+                ) : (
+                  <Field label="Parameters" hint="Optional — defaults to current period, all employees">
+                    <TextInput value={parameters} onChange={(e) => setParameters(e.target.value)} placeholder="e.g. Period 2026-10-01 to 2026-10-15" />
+                  </Field>
+                )}
                 <div className="flex gap-2">
                   <button type="submit" className="flex-1 rounded-md bg-[var(--color-primary)] text-white px-4 py-2.5 font-medium hover:bg-[var(--color-primary-hover)]">
                     {editingId ? 'Save changes' : 'Request report'}
