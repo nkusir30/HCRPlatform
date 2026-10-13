@@ -7,6 +7,13 @@ import { randomUUID } from 'crypto';
 
 const prisma = new PrismaClient();
 
+// Deterministic tenant ids so the web app's baked NEXT_PUBLIC_ORG_ID /
+// NEXT_PUBLIC_COMPANY_ID (see apps/web/Dockerfile ARG defaults) resolve to real
+// Postgres rows. Keep these in sync with those Dockerfile defaults. Overridable
+// via env so the same seed can target a different tenant if needed.
+const ORG_ID = process.env.NEXT_PUBLIC_ORG_ID ?? 'clxorg0001hcrplatformdemo';
+const COMPANY_ID = process.env.NEXT_PUBLIC_COMPANY_ID ?? 'clxco00001hcrplatformdemo';
+
 async function main() {
   const demoMode = process.env.DEMO_MODE === 'true';
 
@@ -15,11 +22,35 @@ async function main() {
     return;
   }
 
+  // Idempotency guard: if the demo org already exists (e.g. a Render redeploy
+  // re-runs the seed), don't create duplicate children — just re-print the ids
+  // the web app needs and exit. Match by the stable business key (dbName) so a
+  // DB seeded with an older/random org id is also detected and won't throw a
+  // unique-constraint error on dbName/code. Keeps the tenant stable across redeploys.
+  const existingOrg =
+    (await prisma.organization.findUnique({ where: { id: ORG_ID } })) ??
+    (await prisma.organization.findUnique({ where: { dbName: 'hcr-demo' } }));
+  if (existingOrg) {
+    const co = await prisma.company.findFirst({ where: { orgId: existingOrg.id } });
+    console.log('Demo data already present — skipping seed (idempotent).');
+    console.log(`  NEXT_PUBLIC_ORG_ID=${existingOrg.id}`);
+    console.log(`  NEXT_PUBLIC_COMPANY_ID=${co?.id ?? COMPANY_ID}`);
+    if (existingOrg.id !== ORG_ID) {
+      console.log(
+        `  WARNING: existing org id "${existingOrg.id}" != baked "${ORG_ID}". ` +
+          `Set the web build's NEXT_PUBLIC_ORG_ID to the value above, or drop the ` +
+          `demo rows and re-seed to adopt the deterministic id.`,
+      );
+    }
+    return;
+  }
+
   console.log('Seeding HCR demo data...');
 
   // 1. Create a demo organization
   const org = await prisma.organization.create({
     data: {
+      id: ORG_ID,
       legalName: 'Home Care Residential',
       dbName: 'hcr-demo',
       bannerColor: '#0a97a0',
@@ -36,6 +67,7 @@ async function main() {
   // 2. Create a demo company
   const company = await prisma.company.create({
     data: {
+      id: COMPANY_ID,
       orgId: org.id,
       name: 'HRV North Sacramento Branch',
       code: '854f9453-d7a0-4e1f-b2c3-9d6e1f0a3b8c',
