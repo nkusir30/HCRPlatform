@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { apiGet, apiPost, apiPut, apiDelete, setAuthToken } from './api';
 import type { AppState, Session, Employee, Schedule, Timesheet, Attendance, Report, House, Program, Account } from './types';
 import { seedState } from './seed';
 import { localDateISO } from './utils';
@@ -61,6 +62,48 @@ function load(): AppState {
   return seedState();
 }
 
+// Request the server's collections once per session so a fresh DB
+// (post-migration) is never replaced by a stale localStorage blob on boot.
+// Server rows win when present; local rows are kept when the API is down or a
+// collection comes back empty. Run after hydration so the client-side store can
+// mount without a React hydration mismatch.
+async function fetchCollection<T>(orgId: string, segment: string): Promise<T[]> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await apiGet<T[]>(`/orgs/${encodeURIComponent(orgId)}/${segment}`, controller.signal);
+    clearTimeout(timer);
+    if (res.ok && Array.isArray(res.data)) return res.data;
+    return [];
+  } catch {
+    clearTimeout(timer);
+    return [];
+  }
+}
+
+export function fetchHousesFromServer(orgId: string): Promise<House[]> {
+  return fetchCollection<House>(orgId, 'houses');
+}
+
+export interface ServerSnapshot {
+  houses: House[];
+  employees: Employee[];
+  schedules: Schedule[];
+  timesheets: Timesheet[];
+  reports: Report[];
+}
+
+export async function fetchSnapshotFromServer(orgId: string): Promise<ServerSnapshot> {
+  const [houses, employees, schedules, timesheets, reports] = await Promise.all([
+    fetchCollection<House>(orgId, 'houses'),
+    fetchCollection<Employee>(orgId, 'employees'),
+    fetchCollection<Schedule>(orgId, 'schedules'),
+    fetchCollection<Timesheet>(orgId, 'timesheets'),
+    fetchCollection<Report>(orgId, 'reports'),
+  ]);
+  return { houses, employees, schedules, timesheets, reports };
+}
+
 let idCounter = 0;
 function newId(prefix: string) {
   idCounter += 1;
@@ -106,11 +149,12 @@ interface AppStore extends AppState {
 const Ctx = createContext<AppStore | null>(null);
 
 export function AppStoreProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AppState>(() => load());
   // The store reads from localStorage, which only exists in the browser. The
   // first client render must match the server render (no session) to avoid a
   // hydration mismatch, so we gate session-dependent UI on this flag.
   const [hydrated, setHydrated] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [state, setState] = useState<AppState>(() => load());
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [lastSyncError, setLastSyncError] = useState<string | null>(null);
 
@@ -119,12 +163,43 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {
-      /* ignore quota / private-mode errors */
-    }
-  }, [state]);
+    if (ready) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const snap = await fetchSnapshotFromServer(state.orgId);
+        if (cancelled) return;
+        setState((s) => ({
+          ...s,
+          // Server rows win when present so edits made on another device (or a
+          // fresh Render deploy) are observable here; local rows survive when
+          // the API is unreachable or a collection is empty.
+          houses: snap.houses.length > 0 ? snap.houses : s.houses,
+          employees: snap.employees.length > 0 ? snap.employees : s.employees,
+          schedules: snap.schedules.length > 0 ? snap.schedules : s.schedules,
+          timesheets: snap.timesheets.length > 0 ? snap.timesheets : s.timesheets,
+          reports: snap.reports.length > 0 ? snap.reports : s.reports,
+        }));
+        if (
+          snap.houses.length > 0 ||
+          snap.employees.length > 0 ||
+          snap.schedules.length > 0 ||
+          snap.timesheets.length > 0 ||
+          snap.reports.length > 0
+        ) {
+          setSyncStatus('synced');
+          setLastSyncError(null);
+        }
+      } catch {
+        // Keep the local seed/state so the UI never goes blank while offline.
+      } finally {
+        if (!cancelled) setReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, state.orgId]);
 
   // Hybrid persistence: local state is updated synchronously (UI never waits),
   // then the same mutation is mirrored to the API in the background. A dead or
@@ -161,15 +236,27 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       const account = state.accounts.find(
         (a) => a.email.toLowerCase() === email.trim().toLowerCase(),
       );
+      const applyLocalSession = (name: string, role: Session['role'], emailAddr: string) => {
+        const session: Session = { email: emailAddr, name, role, orgId: state.orgId };
+        setState((s) => ({ ...s, session }));
+      };
+      // Try the real API first so the JWT is stored and later writes are
+      // authenticated; fall back to the local demo accounts when offline.
+      apiPost<{ access_token?: string }>(`/auth/login`, {
+        email: email.trim(),
+        password,
+      })
+        .then((res) => {
+          if (res.ok && res.data && typeof res.data === 'object' && typeof res.data.access_token === 'string') {
+            setAuthToken(res.data.access_token);
+          }
+        })
+        .catch(() => {
+          /* offline — local session below still applies */
+        });
       if (!account) return { ok: false, error: 'No account found for that email.' };
       if (account.password !== password) return { ok: false, error: 'Incorrect password.' };
-      const session: Session = {
-        email: account.email,
-        name: account.name,
-        role: account.role,
-        orgId: state.orgId,
-      };
-      setState((s) => ({ ...s, session }));
+      applyLocalSession(account.name, account.role, account.email);
       return { ok: true };
     },
     signup(input) {
@@ -192,6 +279,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       return { ok: true };
     },
     logout() {
+      setAuthToken(null);
       setState((s) => ({ ...s, session: null }));
     },
     addEmployee(e) {
@@ -200,11 +288,13 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       applySync(localId, () => syncCreate('employee', state.orgId, employeeCreatePayload(e)));
     },
     updateEmployee(id, patch) {
+      const current = state.employees.find((emp) => emp.id === id);
+      const merged = { ...(current ?? { id }), ...patch, id } as Employee;
       setState((s) => ({
         ...s,
         employees: s.employees.map((emp) => (emp.id === id ? { ...emp, ...patch, id } : emp)),
       }));
-      applySync(id, () => syncUpdate('employee', state.orgId, remoteId(id), employeeUpdatePayload(patch)));
+      applySync(id, () => syncUpdate('employee', state.orgId, remoteId(id), employeeUpdatePayload(merged)));
     },
     deleteEmployee(id) {
       setState((s) => ({
@@ -219,14 +309,52 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     addHouse(h) {
       const localId = newId('clxhouse');
       setState((s) => ({ ...s, houses: [{ ...h, id: localId }, ...s.houses] }));
-      applySync(localId, () => syncCreate('house', state.orgId, houseCreatePayload(h)));
+      applySync(localId, () =>
+        apiPost<House>(`/orgs/${encodeURIComponent(state.orgId)}/houses`, houseCreatePayload(h))
+          .then((res) => {
+            if (res.ok && res.data && typeof res.data === 'object') {
+              const serverId = (res.data as { id?: string }).id;
+              if (serverId && serverId !== localId) {
+                setState((s) => ({
+                  ...s,
+                  houses: s.houses.map((house) =>
+                    house.id === localId ? { ...house, id: serverId } : house,
+                  ),
+                  remoteIds: { ...(s.remoteIds ?? {}), [localId]: serverId },
+                }));
+              }
+            }
+            return res.ok
+              ? { ok: true, serverId: (res.data as { id?: string })?.id }
+              : { ok: false, error: res.error ?? `HTTP ${res.status}` };
+          })
+          .catch((e: unknown) => ({ ok: false, error: e instanceof Error ? e.message : 'network error' })),
+      );
     },
     updateHouse(id, patch) {
       setState((s) => ({
         ...s,
         houses: s.houses.map((h) => (h.id === id ? { ...h, ...patch, id } : h)),
       }));
-      applySync(id, () => syncUpdate('house', state.orgId, remoteId(id), houseUpdatePayload(patch)));
+      applySync(id, () =>
+        apiPut<House>(`/orgs/${encodeURIComponent(state.orgId)}/houses/${encodeURIComponent(id)}`, houseUpdatePayload(patch))
+          .then((res) => {
+            if (res.ok && res.data && typeof res.data === 'object') {
+              const serverId = (res.data as { id?: string }).id;
+              if (serverId && serverId !== id) {
+                setState((s) => ({
+                  ...s,
+                  houses: s.houses.map((h) => (h.id === id ? { ...h, id: serverId } : h)),
+                  remoteIds: { ...(s.remoteIds ?? {}), [id]: serverId },
+                }));
+              }
+            }
+            return res.ok
+              ? { ok: true, serverId: (res.data as { id?: string })?.id }
+              : { ok: false, error: res.error ?? `HTTP ${res.status}` };
+          })
+          .catch((e: unknown) => ({ ok: false, error: e instanceof Error ? e.message : 'network error' })),
+      );
     },
     deleteHouse(id) {
       setState((s) => ({
@@ -236,7 +364,11 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         schedules: s.schedules.filter((sch) => sch.houseId !== id),
         programs: s.programs.map((p) => (p.houseId === id ? { ...p, houseId: undefined } : p)),
       }));
-      applySync(id, () => syncDelete('house', state.orgId, remoteId(id)));
+      applySync(id, () =>
+        apiDelete(`/orgs/${encodeURIComponent(state.orgId)}/houses/${encodeURIComponent(id)}`)
+          .then((res) => ({ ok: res.ok, serverId: res.status === 200 ? id : undefined }))
+          .catch((e: unknown) => ({ ok: false, error: e instanceof Error ? e.message : 'network error' })),
+      );
     },
     addProgram(p) {
       setState((s) => ({ ...s, programs: [{ ...p, id: newId('clxprg') }, ...s.programs] }));
@@ -254,7 +386,13 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     addSchedule(sh) {
       const localId = newId('clxsch');
       setState((s) => ({ ...s, schedules: [{ ...sh, id: localId }, ...s.schedules] }));
-      applySync(localId, () => syncCreate('schedule', state.orgId, schedulePayload(sh, remoteId)));
+      const payload = schedulePayload(sh, remoteId);
+      if (!payload) {
+        setSyncStatus('local-only');
+        setLastSyncError('Schedule saved on this device — sync its employee first.');
+        return;
+      }
+      applySync(localId, () => syncCreate('schedule', state.orgId, payload));
     },
     addSchedules(items) {
       if (items.length === 0) return;
@@ -264,15 +402,29 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       // row per dayOfWeek, same as local).
       for (const row of created) {
         const { id, ...rest } = row;
-        applySync(id, () => syncCreate('schedule', state.orgId, schedulePayload(rest, remoteId)));
+        const payload = schedulePayload(rest, remoteId);
+        if (!payload) {
+          setSyncStatus('local-only');
+          setLastSyncError('Schedules saved on this device — sync their employees first.');
+          continue;
+        }
+        applySync(id, () => syncCreate('schedule', state.orgId, payload));
       }
     },
     updateSchedule(id, patch) {
+      const current = state.schedules.find((sch) => sch.id === id);
+      const merged = { ...(current ?? { id }), ...patch, id } as Schedule;
       setState((s) => ({
         ...s,
         schedules: s.schedules.map((sch) => (sch.id === id ? { ...sch, ...patch, id } : sch)),
       }));
-      applySync(id, () => syncUpdate('schedule', state.orgId, remoteId(id), schedulePayload(patch, remoteId)));
+      const payload = schedulePayload(merged, remoteId);
+      if (!payload) {
+        setSyncStatus('local-only');
+        setLastSyncError('Schedule saved on this device — server references are not synced yet.');
+        return;
+      }
+      applySync(id, () => syncUpdate('schedule', state.orgId, remoteId(id), payload));
     },
     deleteSchedule(id) {
       setState((s) => ({ ...s, schedules: s.schedules.filter((sch) => sch.id !== id) }));
@@ -281,14 +433,28 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     addTimesheet(t) {
       const localId = newId('clxts');
       setState((s) => ({ ...s, timesheets: [{ ...t, id: localId }, ...s.timesheets] }));
-      applySync(localId, () => syncCreate('timesheet', state.orgId, timesheetCreatePayload(t, remoteId)));
+      const payload = timesheetCreatePayload(t, remoteId);
+      if (!payload) {
+        setSyncStatus('local-only');
+        setLastSyncError('Timesheet saved on this device — sync its employee first.');
+        return;
+      }
+      applySync(localId, () => syncCreate('timesheet', state.orgId, payload));
     },
     updateTimesheet(id, patch) {
+      const current = state.timesheets.find((t) => t.id === id);
+      const merged = { ...(current ?? { id }), ...patch, id } as Timesheet;
       setState((s) => ({
         ...s,
         timesheets: s.timesheets.map((t) => (t.id === id ? { ...t, ...patch, id } : t)),
       }));
-      applySync(id, () => syncUpdate('timesheet', state.orgId, remoteId(id), timesheetUpdatePayload(patch, remoteId)));
+      const payload = timesheetUpdatePayload(merged, remoteId);
+      if (!payload) {
+        setSyncStatus('local-only');
+        setLastSyncError('Timesheet saved on this device — server references are not synced yet.');
+        return;
+      }
+      applySync(id, () => syncUpdate('timesheet', state.orgId, remoteId(id), payload));
     },
     deleteTimesheet(id) {
       setState((s) => ({ ...s, timesheets: s.timesheets.filter((t) => t.id !== id) }));

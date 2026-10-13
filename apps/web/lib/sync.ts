@@ -48,16 +48,24 @@ function fail(e: unknown): SyncResult {
 // Payload builders (local type -> API DTO; `rid` maps local ids to server ids)
 // ---------------------------------------------------------------------------
 
+function digits(v: unknown): unknown {
+  return typeof v === 'string' ? v.replace(/\D/g, '') : v;
+}
+
 export function employeeCreatePayload(e: Omit<Employee, 'id'>): Record<string, unknown> {
   return clean({
     companyId: e.companyId,
     firstName: e.firstName,
     lastName: e.lastName,
     email: e.email,
-    phone: e.phone,
+    // Normalize to digits: the API caps phone at 15 chars, but the demo
+    // roster stores formatted numbers like "(916) 555-0111".
+    phone: digits(e.phone),
     employeeCode: e.employeeCode,
     employmentStatus: e.employmentStatus,
-    hireDate: e.hireDate,
+    // Omit blank hire dates — the service defaults them to today. Sending ""
+    // would 400 on @IsDateString().
+    hireDate: e.hireDate && e.hireDate.trim() !== '' ? e.hireDate : undefined,
     isActive: e.isActive,
   });
 }
@@ -67,10 +75,10 @@ export function employeeUpdatePayload(e: Omit<Employee, 'id'>): Record<string, u
     firstName: e.firstName,
     lastName: e.lastName,
     email: e.email,
-    phone: e.phone,
+    phone: digits(e.phone),
     employeeCode: e.employeeCode,
     employmentStatus: e.employmentStatus,
-    hireDate: e.hireDate,
+    hireDate: e.hireDate && e.hireDate.trim() !== '' ? e.hireDate : undefined,
     isActive: e.isActive,
   });
 }
@@ -86,10 +94,10 @@ export function houseCreatePayload(h: Omit<House, 'id'>): Record<string, unknown
     state: h.state,
     postalCode: h.postalCode,
     country: h.country,
-    phone: h.phone,
+    phone: digits(h.phone),
     email: h.email,
     managerName: h.managerName,
-    managerPhone: h.managerPhone,
+    managerPhone: digits(h.managerPhone),
   });
 }
 
@@ -98,7 +106,16 @@ export function houseUpdatePayload(h: Omit<House, 'id'>): Record<string, unknown
   return clean({ ...houseCreatePayload(h), companyId: undefined });
 }
 
-export function schedulePayload(s: Omit<Schedule, 'id'>, rid: (id: string) => string): Record<string, unknown> {
+// Skip the server write when FK targets are still local-only ids (created
+// offline and not yet synced). Sending a `clx...` cuid that doesn't exist in
+// Postgres would 400/500 on the FK check — the local row is kept and the
+// caller records `local-only` so the user sees the device-only badge.
+function unresolvedLocalId(rid: (id: string) => string, ...ids: (string | undefined)[]): boolean {
+  return ids.some((id) => typeof id === 'string' && id !== '' && rid(id) === id && id.startsWith('clx'));
+}
+
+export function schedulePayload(s: Omit<Schedule, 'id'>, rid: (id: string) => string): Record<string, unknown> | null {
+  if (unresolvedLocalId(rid, s.employeeId, s.payrollPeriodId)) return null;
   return clean({
     dayOfWeek: s.dayOfWeek,
     startTime: s.startTime,
@@ -112,9 +129,10 @@ export function schedulePayload(s: Omit<Schedule, 'id'>, rid: (id: string) => st
   });
 }
 
-export function timesheetCreatePayload(t: Omit<Timesheet, 'id'>, rid: (id: string) => string): Record<string, unknown> {
+export function timesheetCreatePayload(t: Omit<Timesheet, 'id'>, rid: (id: string) => string): Record<string, unknown> | null {
   // CreateTimesheetDto has no `status` field (forbidNonWhitelisted) — status
   // changes go through the accept/approve endpoints only.
+  if (unresolvedLocalId(rid, t.employeeId, t.payrollPeriodId)) return null;
   return clean({
     companyId: t.companyId,
     employeeId: rid(t.employeeId),
@@ -127,7 +145,8 @@ export function timesheetCreatePayload(t: Omit<Timesheet, 'id'>, rid: (id: strin
   });
 }
 
-export function timesheetUpdatePayload(t: Omit<Timesheet, 'id'>, rid: (id: string) => string): Record<string, unknown> {
+export function timesheetUpdatePayload(t: Omit<Timesheet, 'id'>, rid: (id: string) => string): Record<string, unknown> | null {
+  if (unresolvedLocalId(rid, t.employeeId, t.payrollPeriodId)) return null;
   return clean({
     employeeId: rid(t.employeeId),
     payrollPeriodId: rid(t.payrollPeriodId),

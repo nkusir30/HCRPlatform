@@ -16,9 +16,14 @@ COPY apps/web/postcss.config.* ./
 COPY apps/web/tsconfig.json ./tsconfig.json
 COPY apps/web/next.config.js ./next.config.js
 
-# NEXT_PUBLIC_API_URL is baked at build time; default points at the Render API
+# NEXT_PUBLIC_* are baked at build time; the org/company ids must match the
+# Postgres rows created by prisma/seed.ts, otherwise every write FK-fails.
 ARG NEXT_PUBLIC_API_URL=https://hcr-api.onrender.com/api
+ARG NEXT_PUBLIC_ORG_ID=clxorg0001hcrplatformdemo
+ARG NEXT_PUBLIC_COMPANY_ID=clxco00001hcrplatformdemo
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_ORG_ID=${NEXT_PUBLIC_ORG_ID}
+ENV NEXT_PUBLIC_COMPANY_ID=${NEXT_PUBLIC_COMPANY_ID}
 
 RUN npm run build
 

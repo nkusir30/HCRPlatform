@@ -1,184 +1,81 @@
+// Prisma seed — demo data for HCR Payroll & HR SaaS
+// Run: pnpm db:seed
+// Usage: Only in development / demo mode. Never run in production.
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 
-  // 9. Create demo holiday
-  const holiday = await prisma.holiday.create({
+const prisma = new PrismaClient();
+
+async function main() {
+  const demoMode = process.env.DEMO_MODE === 'true';
+
+  if (!demoMode) {
+    console.log('DEMO_MODE is not enabled. Skipping seed.');
+    return;
+  }
+
+  console.log('Seeding HCR demo data...');
+
+  // 1. Create a demo organization
+  const org = await prisma.organization.create({
+    data: {
+      legalName: 'Home Care Residential',
+      dbName: 'hcr-demo',
+      bannerColor: '#0a97a0',
+      logoUrl: '/logo.svg',
+      coverImgUrl: '/cover.svg',
+      tosUrl: '/tos',
+      privacyUrl: '/privacy',
+      registeredAt: new Date(),
+      active: true,
+      isDemo: true,
+    },
+  });
+
+  // 2. Create a demo company
+  const company = await prisma.company.create({
+    data: {
+      orgId: org.id,
+      name: 'HRV North Sacramento Branch',
+      code: '854f9453-d7a0-4e1f-b2c3-9d6e1f0a3b8c',
+      address1: '1200 Industrial Parkway',
+      address2: 'Suite 200',
+      city: 'Sacramento',
+      state: 'CA',
+      postalCode: '95815',
+      country: 'US',
+      phone: '(916) 555-0142',
+      website: 'https://hrv-homes.com',
+      industry: 'Home Care / DSP',
+      onboardingUrl: '/onboarding',
+      settings: { payroll_frequency: 'biweekly', currency: 'USD' },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+
+  // 3. Create a demo house
+  const house = await prisma.house.create({
     data: {
       orgId: org.id,
       companyId: company.id,
-      houseId: house.id,
-      holidayId: `HOL-${String(now.getFullYear()).slice(2)}-NEW`,
-      name: 'New Year\'s Day',
-      date: new Date(`${now.getFullYear()}-01-01`),
-      type: 'federal',
-      observed: true,
-      notes: 'Non-working day. All staff off.',
+      name: 'Sunrise House',
+      code: 'HRV-SN-001',
+      address1: '4500 Sunrise Avenue',
+      city: 'Sacramento',
+      state: 'CA',
+      postalCode: '95821',
+      country: 'US',
+      email: 'manager@hrv-homes.com',
+      phone: '(916) 555-0188',
+      managerName: 'Maria Santos',
+      managerPhone: '(916) 555-0177',
+      settings: {},
       createdAt: new Date(),
       updatedAt: new Date(),
     },
   });
-
-  // 10. Create demo certification
-  const cert = await prisma.certification.create({
-    data: {
-      orgId: org.id,
-      employeeId: employee.id,
-      certId: `CERT-${String(now.getFullYear()).slice(2)}-CPR`,
-      issuer: 'Red Cross',
-      certNumber: 'RC-2023-88421',
-      issuingDate: new Date('2023-06-01'),
-      expiryDate: new Date('2026-05-31'),
-      status: 'valid',
-      issuedBy: 'Red Cross Training Center - Sacramento',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  });
-
-  // 11. Create demo work schedule
-  await prisma.workSchedule.createMany({
-    data: [
-      {
-        orgId: org.id,
-        employeeId: employee.id,
-        payrollPeriodId: period.id,
-        scheduleType: 'shift',
-        dayOfWeek: 1,
-        startTime: '08:00',
-        endTime: '16:00',
-        isBreak: false,
-        comment: 'Standard weekday shift',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        orgId: org.id,
-        employeeId: employee.id,
-        payrollPeriodId: period.id,
-        scheduleType: 'shift',
-        dayOfWeek: 2,
-        startTime: '08:00',
-        endTime: '16:00',
-        isBreak: false,
-        comment: 'Standard weekday shift',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        orgId: org.id,
-        employeeId: employee.id,
-        payrollPeriodId: period.id,
-        scheduleType: 'shift',
-        dayOfWeek: 3,
-        startTime: '08:00',
-        endTime: '16:00',
-        isBreak: false,
-        comment: 'Standard weekday shift',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        orgId: org.id,
-        employeeId: employee.id,
-        payrollPeriodId: period.id,
-        scheduleType: 'shift',
-        dayOfWeek: 4,
-        startTime: '08:00',
-        endTime: '16:00',
-        isBreak: false,
-        comment: 'Standard weekday shift',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        orgId: org.id,
-        employeeId: employee.id,
-        payrollPeriodId: period.id,
-        scheduleType: 'shift',
-        dayOfWeek: 5,
-        startTime: '08:00',
-        endTime: '16:00',
-        isBreak: false,
-        comment: 'Standard weekday shift',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ],
-  });
-
-  // 12. Create demo benefit enrollment
-  const enrollment = await prisma.benefitEnrollment.create({
-    data: {
-      orgId: org.id,
-      employeeId: employee.id,
-      benefitId: benefit1.id,
-      enrollmentId: `BEN-ENR-${String(now.getFullYear())}-${employee.employeeCode}`,
-      coverage: 'individual',
-      effectiveDate: new Date('2026-01-01'),
-      endDate: new Date(`${now.getFullYear() + 1}-12-31`),
-      status: 'active',
-      optedOut: false,
-      dateElected: new Date('2025-11-15'),
-      premiumPaid: 150,
-      paidBy: 'employer',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  });
-
-  // 13. Create demo document
-  const doc = await prisma.document.create({
-    data: {
-      orgId: org.id,
-      userId: admin1.id,
-      employeeId: employee.id,
-      type: 'handbooks',
-      folder: 'policies',
-      filename: 'hcr-handbook-2025.pdf',
-      originalName: 'HCR Employee Handbook 2025.pdf',
-      mimeType: 'application/pdf',
-      sizeBytes: 2457600,
-      url: 'https://storage.hcr-demo.com/handbooks/hcr-handbook-2025.pdf',
-      status: 'uploaded',
-      isSigned: false,
-      uploadedAt: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  });
-
-  // 14. Create demo approval (pending timesheet approval)
-  await prisma.approval.create({
-    data: {
-      orgId: org.id,
-      payrollPeriodId: period.id,
-      employeeId: employee.id,
-      timesheetId: randomUUID(),
-      approverId: admin1.id,
-      approverName: 'Sarah Chen',
-      status: 'pending',
-      reasonRequired: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  });
-
-  console.log('Demo data seeded successfully!');
-  console.log(`  Organization: ${org.dbName}`);
-  console.log(`  Company: ${company.name}`);
-  console.log(`  House: ${house.name}`);
-  console.log(`  Admin: ${admin1.email}`);
-  console.log(`  Employee: ${employee.email}`);
-  console.log(`  Payroll Period: ${period.payrollId}`);
-}
-
-main()
-  .catch((e) => {
-    console.error('Seed failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
-
 
   // 4. Create a demo payroll period (current)
   const now = new Date();
@@ -353,81 +250,188 @@ main()
     },
   });
 
-// Prisma seed — demo data for HCR Payroll & HR SaaS
-// Run: pnpm db:seed
-// Usage: Only in development / demo mode. Never run in production.
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
-import { randomUUID } from 'crypto';
-
-const prisma = new PrismaClient();
-
-async function main() {
-  const demoMode = process.env.DEMO_MODE === 'true';
-
-  if (!demoMode) {
-    console.log('DEMO_MODE is not enabled. Skipping seed.');
-    return;
-  }
-
-  console.log('Seeding HCR demo data...');
-
-  // 1. Create a demo organization
-  const org = await prisma.organization.create({
-    data: {
-      legalName: 'Home Care Residential',
-      dbName: 'hcr-demo',
-      bannerColor: '#0a97a0',
-      logoUrl: '/logo.svg',
-      coverImgUrl: '/cover.svg',
-      tosUrl: '/tos',
-      privacyUrl: '/privacy',
-      registeredAt: new Date(),
-      active: true,
-      isDemo: true,
-    },
-  });
-
-  // 2. Create a demo company
-  const company = await prisma.company.create({
-    data: {
-      orgId: org.id,
-      name: 'HRV North Sacramento Branch',
-      code: '854f9453-d7a0-4e1f-b2c3-9d6e1f0a3b8c',
-      address1: '1200 Industrial Parkway',
-      address2: 'Suite 200',
-      city: 'Sacramento',
-      state: 'CA',
-      postalCode: '95815',
-      country: 'US',
-      phone: '(916) 555-0142',
-      website: 'https://hrv-homes.com',
-      industry: 'Home Care / DSP',
-      onboardingUrl: '/onboarding',
-      settings: { payroll_frequency: 'biweekly', currency: 'USD' },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  });
-
-  // 3. Create a demo house
-  const house = await prisma.house.create({
+  // 9. Create demo holiday
+  const holiday = await prisma.holiday.create({
     data: {
       orgId: org.id,
       companyId: company.id,
-      name: 'Sunrise House',
-      code: 'HRV-SN-001',
-      address1: '4500 Sunrise Avenue',
-      city: 'Sacramento',
-      state: 'CA',
-      postalCode: '95821',
-      country: 'US',
-      email: 'manager@hrv-homes.com',
-      phone: '(916) 555-0188',
-      managerName: 'Maria Santos',
-      managerPhone: '(916) 555-0177',
-      settings: {},
+      houseId: house.id,
+      holidayId: `HOL-${String(now.getFullYear()).slice(2)}-NEW`,
+      name: 'New Year\'s Day',
+      date: new Date(`${now.getFullYear()}-01-01`),
+      type: 'federal',
+      observed: true,
+      notes: 'Non-working day. All staff off.',
       createdAt: new Date(),
       updatedAt: new Date(),
     },
+  });
+
+  // 10. Create demo certification
+  const cert = await prisma.certification.create({
+    data: {
+      orgId: org.id,
+      employeeId: employee.id,
+      certId: `CERT-${String(now.getFullYear()).slice(2)}-CPR`,
+      issuer: 'Red Cross',
+      certNumber: 'RC-2023-88421',
+      issuingDate: new Date('2023-06-01'),
+      expiryDate: new Date('2026-05-31'),
+      status: 'valid',
+      issuedBy: 'Red Cross Training Center - Sacramento',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+
+  // 11. Create demo work schedule
+  await prisma.workSchedule.createMany({
+    data: [
+      {
+        orgId: org.id,
+        employeeId: employee.id,
+        payrollPeriodId: period.id,
+        scheduleType: 'shift',
+        dayOfWeek: 1,
+        startTime: '08:00',
+        endTime: '16:00',
+        isBreak: false,
+        comment: 'Standard weekday shift',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        orgId: org.id,
+        employeeId: employee.id,
+        payrollPeriodId: period.id,
+        scheduleType: 'shift',
+        dayOfWeek: 2,
+        startTime: '08:00',
+        endTime: '16:00',
+        isBreak: false,
+        comment: 'Standard weekday shift',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        orgId: org.id,
+        employeeId: employee.id,
+        payrollPeriodId: period.id,
+        scheduleType: 'shift',
+        dayOfWeek: 3,
+        startTime: '08:00',
+        endTime: '16:00',
+        isBreak: false,
+        comment: 'Standard weekday shift',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        orgId: org.id,
+        employeeId: employee.id,
+        payrollPeriodId: period.id,
+        scheduleType: 'shift',
+        dayOfWeek: 4,
+        startTime: '08:00',
+        endTime: '16:00',
+        isBreak: false,
+        comment: 'Standard weekday shift',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        orgId: org.id,
+        employeeId: employee.id,
+        payrollPeriodId: period.id,
+        scheduleType: 'shift',
+        dayOfWeek: 5,
+        startTime: '08:00',
+        endTime: '16:00',
+        isBreak: false,
+        comment: 'Standard weekday shift',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ],
+  });
+
+  // 12. Create demo benefit enrollment
+  const enrollment = await prisma.benefitEnrollment.create({
+    data: {
+      orgId: org.id,
+      employeeId: employee.id,
+      benefitId: benefit1.id,
+      enrollmentId: `BEN-ENR-${String(now.getFullYear())}-${employee.employeeCode}`,
+      coverage: 'individual',
+      effectiveDate: new Date('2026-01-01'),
+      endDate: new Date(`${now.getFullYear() + 1}-12-31`),
+      status: 'active',
+      optedOut: false,
+      dateElected: new Date('2025-11-15'),
+      premiumPaid: 150,
+      paidBy: 'employer',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+
+  // 13. Create demo document
+  const doc = await prisma.document.create({
+    data: {
+      orgId: org.id,
+      userId: admin1.id,
+      employeeId: employee.id,
+      type: 'handbooks',
+      folder: 'policies',
+      filename: 'hcr-handbook-2025.pdf',
+      originalName: 'HCR Employee Handbook 2025.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 2457600,
+      url: 'https://storage.hcr-demo.com/handbooks/hcr-handbook-2025.pdf',
+      status: 'uploaded',
+      isSigned: false,
+      uploadedAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+
+  // 14. Create demo approval (pending timesheet approval)
+  await prisma.approval.create({
+    data: {
+      orgId: org.id,
+      payrollPeriodId: period.id,
+      employeeId: employee.id,
+      timesheetId: randomUUID(),
+      approverId: admin1.id,
+      approverName: 'Sarah Chen',
+      status: 'pending',
+      reasonRequired: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+
+  console.log('Demo data seeded successfully!');
+  console.log(`  Organization: ${org.dbName}`);
+  console.log(`  Company: ${company.name}`);
+  console.log(`  House: ${house.name}`);
+  console.log(`  Admin: ${admin1.email}`);
+  console.log(`  Employee: ${employee.email}`);
+  console.log(`  Payroll Period: ${period.payrollId}`);
+  // Render wiring: the web app's NEXT_PUBLIC_ORG_ID / NEXT_PUBLIC_COMPANY_ID
+  // must match these ids, otherwise every form write fails its FK check and
+  // degrades to "saved on this device only".
+  console.log(`  NEXT_PUBLIC_ORG_ID=${org.id}`);
+  console.log(`  NEXT_PUBLIC_COMPANY_ID=${company.id}`);
+  console.log(`  PAYROLL_PERIOD_ID=${period.id}`);
+}
+
+main()
+  .catch((e) => {
+    console.error('Seed failed:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });

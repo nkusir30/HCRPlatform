@@ -17,9 +17,27 @@ const NAV = [
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { session, hydrated, logout } = useApp();
+  const { session, hydrated, logout, syncStatus, lastSyncError } = useApp();
   const pathname = usePathname();
   const router = useRouter();
+
+  const syncBadge =
+    syncStatus === 'synced' ? (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
+        <span aria-hidden>●</span> Saved to server
+      </span>
+    ) : syncStatus === 'syncing' ? (
+      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+        <span aria-hidden>●</span> Saving…
+      </span>
+    ) : syncStatus === 'local-only' ? (
+      <span
+        className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-800"
+        title={lastSyncError ?? 'Edits are saved on this device only — the server is unreachable.'}
+      >
+        <span aria-hidden>●</span> Saved on this device only
+      </span>
+    ) : null;
 
   // Until the client has read localStorage, render a neutral state that matches
   // the server (no session) so hydration succeeds. Then enforce the auth guard.
@@ -66,6 +84,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div>
               <div className="font-semibold">Home Care Residential</div>
               <div className="text-xs text-[var(--color-text-muted)]">Scheduling &amp; Payroll</div>
+              <div className="mt-2">{syncBadge}</div>
+              {syncStatus === 'local-only' && lastSyncError ? (
+                <div className="mt-1 text-[11px] text-[var(--color-danger)]">Server sync failed: {lastSyncError}</div>
+              ) : null}
             </div>
           </div>
         </div>

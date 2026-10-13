@@ -56,7 +56,7 @@ export class CreateHouseDto {
 
   @IsString()
   @IsOptional()
-  @MinLength(10)
+  @MinLength(7)
   @MaxLength(20)
   phone?: string;
 
@@ -72,7 +72,7 @@ export class CreateHouseDto {
 
   @IsString()
   @IsOptional()
-  @MinLength(10)
+  @MinLength(7)
   @MaxLength(20)
   managerPhone?: string;
 
@@ -132,7 +132,7 @@ export class UpdateHouseDto {
 
   @IsString()
   @IsOptional()
-  @MinLength(10)
+  @MinLength(7)
   @MaxLength(20)
   phone?: string;
 
@@ -148,7 +148,7 @@ export class UpdateHouseDto {
 
   @IsString()
   @IsOptional()
-  @MinLength(10)
+  @MinLength(7)
   @MaxLength(20)
   managerPhone?: string;
 

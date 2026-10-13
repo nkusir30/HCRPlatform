@@ -4,13 +4,13 @@ import {
   Post,
   Body,
   Param,
-  ParseUUIDPipe,
   Put,
   Delete,
 } from '@nestjs/common';
 import { HouseService } from './house.service';
 import { CreateHouseDto } from './dto/create-house.dto';
 import { UpdateHouseDto } from './dto/update-house.dto';
+import { ParseIdPipe } from '../common/pipes/parse-id.pipe';
 
 @Controller('orgs/:orgId/houses')
 export class HouseController {
@@ -22,7 +22,7 @@ export class HouseController {
   }
 
   @Get(':id')
-  findById(@Param('orgId') orgId: string, @Param('id', ParseUUIDPipe) id: string) {
+  findById(@Param('orgId') orgId: string, @Param('id', ParseIdPipe) id: string) {
     return this.houseService.findById(orgId, id);
   }
 
@@ -37,12 +37,12 @@ export class HouseController {
   }
 
   @Put(':id')
-  update(@Param('orgId') orgId: string, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateHouseDto) {
+  update(@Param('orgId') orgId: string, @Param('id', ParseIdPipe) id: string, @Body() dto: UpdateHouseDto) {
     return this.houseService.update(orgId, id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('orgId') orgId: string, @Param('id', ParseUUIDPipe) id: string) {
+  remove(@Param('orgId') orgId: string, @Param('id', ParseIdPipe) id: string) {
     return this.houseService.remove(orgId, id);
   }
 }

@@ -4,13 +4,13 @@ import {
   Post,
   Body,
   Param,
-  ParseUUIDPipe,
   Put,
   Delete,
 } from '@nestjs/common';
 import { EmployeeService } from './employee.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import { ParseIdPipe } from '../common/pipes/parse-id.pipe';
 
 @Controller('orgs/:orgId/employees')
 export class EmployeeController {
@@ -22,7 +22,7 @@ export class EmployeeController {
   }
 
   @Get(':id')
-  findById(@Param('orgId') orgId: string, @Param('id', ParseUUIDPipe) id: string) {
+  findById(@Param('orgId') orgId: string, @Param('id', ParseIdPipe) id: string) {
     return this.employeeService.findById(orgId, id);
   }
 
@@ -37,12 +37,12 @@ export class EmployeeController {
   }
 
   @Put(':id')
-  update(@Param('orgId') orgId: string, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateEmployeeDto) {
+  update(@Param('orgId') orgId: string, @Param('id', ParseIdPipe) id: string, @Body() dto: UpdateEmployeeDto) {
     return this.employeeService.update(orgId, id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('orgId') orgId: string, @Param('id', ParseUUIDPipe) id: string) {
+  remove(@Param('orgId') orgId: string, @Param('id', ParseIdPipe) id: string) {
     return this.employeeService.remove(orgId, id);
   }
 }

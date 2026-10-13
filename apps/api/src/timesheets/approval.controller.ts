@@ -1,7 +1,8 @@
-import { Controller, Post, Body, Param, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Post, Body, Param } from '@nestjs/common';
 import { ApprovalService } from './timesheets.service';
 import { AcceptTimesheetDto } from './dto/accept-timesheet.dto';
 import { DisapproveTimesheetDto } from './dto/disapprove-timesheet.dto';
+import { ParseIdPipe } from '../common/pipes/parse-id.pipe';
 
 @Controller('orgs/:orgId/timesheets')
 export class ApprovalController {
@@ -10,7 +11,7 @@ export class ApprovalController {
   @Post(':id/accept')
   accept(
     @Param('orgId') orgId: string,
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIdPipe) id: string,
     @Body() dto: AcceptTimesheetDto,
   ) {
     return this.approvalService.accept(orgId, id, dto.userId, {
@@ -20,14 +21,14 @@ export class ApprovalController {
   }
 
   @Post(':id/approve')
-  approve(@Param('orgId') orgId: string, @Param('id', ParseUUIDPipe) id: string) {
+  approve(@Param('orgId') orgId: string, @Param('id', ParseIdPipe) id: string) {
     return this.approvalService.approve(orgId, id);
   }
 
   @Post(':id/disapprove')
   disapprove(
     @Param('orgId') orgId: string,
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIdPipe) id: string,
     @Body() dto: DisapproveTimesheetDto,
   ) {
     return this.approvalService.disapprove(orgId, id, dto.reason);

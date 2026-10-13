@@ -4,7 +4,6 @@ import {
   Post,
   Body,
   Param,
-  ParseUUIDPipe,
   Query,
   Put,
   Delete,
@@ -12,6 +11,7 @@ import {
 import { ReportService } from './report.service';
 import { CreateReportRequestDto } from './dto/create-report-request.dto';
 import { UpdateReportRequestDto } from './dto/update-report-request.dto';
+import { ParseIdPipe } from '../common/pipes/parse-id.pipe';
 
 @Controller('orgs/:orgId/reports')
 export class ReportController {
@@ -23,7 +23,7 @@ export class ReportController {
   }
 
   @Get(':id')
-  findById(@Param('orgId') orgId: string, @Param('id', ParseUUIDPipe) id: string) {
+  findById(@Param('orgId') orgId: string, @Param('id', ParseIdPipe) id: string) {
     return this.reportService.findById(orgId, id);
   }
 
@@ -40,14 +40,14 @@ export class ReportController {
   @Put(':id')
   update(
     @Param('orgId') orgId: string,
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIdPipe) id: string,
     @Body() dto: UpdateReportRequestDto,
   ) {
     return this.reportService.update(orgId, id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('orgId') orgId: string, @Param('id', ParseUUIDPipe) id: string) {
+  remove(@Param('orgId') orgId: string, @Param('id', ParseIdPipe) id: string) {
     return this.reportService.remove(orgId, id);
   }
 }

@@ -5,9 +5,11 @@ export class CreateEmployeeDto {
   @IsNotEmpty()
   companyId: string;
 
+  // Optional: the web client creates employees before a user account exists.
+  // The service auto-provisions a user when omitted.
   @IsString()
-  @IsNotEmpty()
-  userId: string;
+  @IsOptional()
+  userId?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -52,8 +54,8 @@ export class CreateEmployeeDto {
   employmentStatus: string;
 
   @IsDateString()
-  @IsNotEmpty()
-  hireDate: string;
+  @IsOptional()
+  hireDate?: string;
 
   @IsBoolean()
   @IsOptional()

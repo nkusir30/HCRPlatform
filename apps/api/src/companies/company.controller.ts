@@ -4,13 +4,13 @@ import {
   Post,
   Body,
   Param,
-  ParseUUIDPipe,
   Put,
   Delete,
 } from '@nestjs/common';
 import { CompanyService } from './company.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
+import { ParseIdPipe } from '../common/pipes/parse-id.pipe';
 
 @Controller('orgs/:orgId/companies')
 export class CompanyController {
@@ -22,7 +22,7 @@ export class CompanyController {
   }
 
   @Get(':id')
-  findById(@Param('orgId') orgId: string, @Param('id', ParseUUIDPipe) id: string) {
+  findById(@Param('orgId') orgId: string, @Param('id', ParseIdPipe) id: string) {
     return this.companyService.findById(orgId, id);
   }
 
@@ -37,12 +37,12 @@ export class CompanyController {
   }
 
   @Put(':id')
-  update(@Param('orgId') orgId: string, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateCompanyDto) {
+  update(@Param('orgId') orgId: string, @Param('id', ParseIdPipe) id: string, @Body() dto: UpdateCompanyDto) {
     return this.companyService.update(orgId, id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('orgId') orgId: string, @Param('id', ParseUUIDPipe) id: string) {
+  remove(@Param('orgId') orgId: string, @Param('id', ParseIdPipe) id: string) {
     return this.companyService.remove(orgId, id);
   }
 }

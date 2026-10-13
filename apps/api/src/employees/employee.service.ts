@@ -29,10 +29,41 @@ export class EmployeeService {
   }
 
   async create(orgId: string, dto: CreateEmployeeDto) {
+    // The web client creates employees before a login account exists, and the
+    // demo roster carries empty hire dates. Prisma requires both columns, so
+    // provision them here: reuse/link the user when possible, otherwise create
+    // a placeholder user; default a missing hireDate to today.
+    const { userId, hireDate, ...rest } = dto;
+    let resolvedUserId = userId;
+    if (!resolvedUserId) {
+      const existingUser = await this.prisma.user.findUnique({ where: { email: dto.email } });
+      if (existingUser) {
+        resolvedUserId = existingUser.id;
+      } else {
+        const created = await this.prisma.user.create({
+          data: {
+            orgId,
+            companyId: dto.companyId,
+            email: dto.email,
+            name: `${dto.firstName} ${dto.lastName}`,
+            firstName: dto.firstName,
+            lastName: dto.lastName,
+            phone: dto.phone,
+            role: 'employee',
+            status: 'active',
+            isActive: dto.isActive ?? true,
+          },
+        });
+        resolvedUserId = created.id;
+      }
+    }
+    const resolvedHireDate = hireDate && hireDate.trim() !== '' ? hireDate : new Date().toISOString();
     return this.prisma.employee.create({
       data: {
         orgId,
-        ...dto,
+        ...rest,
+        userId: resolvedUserId,
+        hireDate: resolvedHireDate,
       },
     });
   }

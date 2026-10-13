@@ -4,7 +4,6 @@ import {
   Post,
   Body,
   Param,
-  ParseUUIDPipe,
   Query,
   Put,
   Delete,
@@ -12,6 +11,7 @@ import {
 import { TimesheetService } from './timesheets.service';
 import { CreateTimesheetDto } from './dto/create-timesheet.dto';
 import { UpdateTimesheetDto } from './dto/update-timesheet.dto';
+import { ParseIdPipe } from '../common/pipes/parse-id.pipe';
 
 @Controller('orgs/:orgId/timesheets')
 export class TimesheetController {
@@ -27,7 +27,7 @@ export class TimesheetController {
   }
 
   @Get(':id')
-  findById(@Param('orgId') orgId: string, @Param('id', ParseUUIDPipe) id: string) {
+  findById(@Param('orgId') orgId: string, @Param('id', ParseIdPipe) id: string) {
     return this.timesheetService.findById(orgId, id);
   }
 
@@ -48,14 +48,14 @@ export class TimesheetController {
   @Put(':id')
   update(
     @Param('orgId') orgId: string,
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIdPipe) id: string,
     @Body() dto: UpdateTimesheetDto,
   ) {
     return this.timesheetService.update(orgId, id, dto);
   }
 
   @Delete(':id')
-  destroy(@Param('orgId') orgId: string, @Param('id', ParseUUIDPipe) id: string) {
+  destroy(@Param('orgId') orgId: string, @Param('id', ParseIdPipe) id: string) {
     return this.timesheetService.destroy(orgId, id);
   }
 }
