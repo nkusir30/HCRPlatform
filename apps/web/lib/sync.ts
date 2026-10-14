@@ -8,9 +8,16 @@
 // forbidNonWhitelisted, so sending an extra key (e.g. local `id` or `status`)
 // would 400 the whole request.
 import { apiPost, apiPut, apiDelete } from './api';
-import type { Employee, House, Report, Schedule, Timesheet } from './types';
+import type { Employee, House, Program, Report, Schedule, Timesheet, Attendance } from './types';
 
-export type SyncEntity = 'employee' | 'house' | 'schedule' | 'timesheet' | 'report';
+export type SyncEntity =
+  | 'employee'
+  | 'house'
+  | 'schedule'
+  | 'timesheet'
+  | 'report'
+  | 'program'
+  | 'attendance';
 
 export interface SyncResult {
   ok: boolean;
@@ -24,6 +31,8 @@ const SEGMENT: Record<SyncEntity, string> = {
   schedule: 'schedules',
   timesheet: 'timesheets',
   report: 'reports',
+  program: 'programs',
+  attendance: 'attendance',
 };
 
 function clean(obj: Record<string, unknown>): Record<string, unknown> {
@@ -177,6 +186,58 @@ export function reportUpdatePayload(r: Pick<Report, 'type' | 'parameters'>): Rec
   });
 }
 
+export function programCreatePayload(p: Omit<Program, 'id'>): Record<string, unknown> {
+  return clean({
+    companyId: p.companyId,
+    houseId: p.houseId,
+    programId: p.programId,
+    name: p.name,
+    code: p.code,
+    description: p.description,
+    active: p.active,
+  });
+}
+
+export function programUpdatePayload(p: Omit<Program, 'id'>): Record<string, unknown> {
+  return clean({
+    name: p.name,
+    code: p.code,
+    description: p.description,
+    houseId: p.houseId,
+    active: p.active,
+  });
+}
+
+// Attendance clock punch. `employeeId`/`scheduleId`/`houseId` must be server ids;
+// skip the write when the employee is still a local-only (unsynced) id so we
+// don't FK-fail. Timestamps are passed through verbatim — they were captured
+// from the system clock at punch time and are never editable.
+export function attendanceCreatePayload(
+  a: Omit<Attendance, 'id'>,
+  rid: (id: string) => string,
+): Record<string, unknown> | null {
+  if (unresolvedLocalId(rid, a.employeeId)) return null;
+  return clean({
+    employeeId: rid(a.employeeId),
+    scheduleId: a.scheduleId ? rid(a.scheduleId) : undefined,
+    houseId: a.houseId ? rid(a.houseId) : undefined,
+    date: a.date,
+    clockInAt: a.clockInAt ?? undefined,
+    clockOutAt: a.clockOutAt ?? undefined,
+    status: a.status,
+    source: a.source,
+  });
+}
+
+export function attendanceUpdatePayload(
+  a: Pick<Attendance, 'clockOutAt' | 'status'>,
+): Record<string, unknown> {
+  return clean({
+    clockOutAt: a.clockOutAt ?? undefined,
+    status: a.status,
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Transport
 // ---------------------------------------------------------------------------
@@ -230,6 +291,27 @@ export async function syncTimesheetApprove(orgId: string, serverId: string): Pro
       {},
     );
     return res.ok ? { ok: true, serverId } : { ok: false, error: res.error ?? `HTTP ${res.status}` };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+// Register an account server-side (hashed password + JWT) so a signup survives
+// a new device / fresh deploy, not just this browser. Best-effort: the local
+// demo account is always created regardless of the outcome.
+export async function syncSignup(input: {
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+  orgId: string;
+  companyId: string;
+}): Promise<SyncResult & { accessToken?: string }> {
+  try {
+    const res = await apiPost<{ access_token?: string }>('/auth/signup', input);
+    if (!res.ok) return { ok: false, error: res.error ?? `HTTP ${res.status}` };
+    const token = res.data && typeof res.data === 'object' ? res.data.access_token : undefined;
+    return { ok: true, accessToken: typeof token === 'string' ? token : undefined };
   } catch (e) {
     return fail(e);
   }

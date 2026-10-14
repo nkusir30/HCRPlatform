@@ -10,6 +10,7 @@ import {
   syncUpdate,
   syncDelete,
   syncTimesheetApprove,
+  syncSignup,
   employeeCreatePayload,
   employeeUpdatePayload,
   houseCreatePayload,
@@ -19,6 +20,10 @@ import {
   timesheetUpdatePayload,
   reportCreatePayload,
   reportUpdatePayload,
+  programCreatePayload,
+  programUpdatePayload,
+  attendanceCreatePayload,
+  attendanceUpdatePayload,
   type SyncResult,
 } from './sync';
 
@@ -91,17 +96,21 @@ export interface ServerSnapshot {
   schedules: Schedule[];
   timesheets: Timesheet[];
   reports: Report[];
+  programs: Program[];
+  attendance: Attendance[];
 }
 
 export async function fetchSnapshotFromServer(orgId: string): Promise<ServerSnapshot> {
-  const [houses, employees, schedules, timesheets, reports] = await Promise.all([
+  const [houses, employees, schedules, timesheets, reports, programs, attendance] = await Promise.all([
     fetchCollection<House>(orgId, 'houses'),
     fetchCollection<Employee>(orgId, 'employees'),
     fetchCollection<Schedule>(orgId, 'schedules'),
     fetchCollection<Timesheet>(orgId, 'timesheets'),
     fetchCollection<Report>(orgId, 'reports'),
+    fetchCollection<Program>(orgId, 'programs'),
+    fetchCollection<Attendance>(orgId, 'attendance'),
   ]);
-  return { houses, employees, schedules, timesheets, reports };
+  return { houses, employees, schedules, timesheets, reports, programs, attendance };
 }
 
 let idCounter = 0;
@@ -179,13 +188,17 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           schedules: snap.schedules.length > 0 ? snap.schedules : s.schedules,
           timesheets: snap.timesheets.length > 0 ? snap.timesheets : s.timesheets,
           reports: snap.reports.length > 0 ? snap.reports : s.reports,
+          programs: snap.programs.length > 0 ? snap.programs : s.programs,
+          attendance: snap.attendance.length > 0 ? snap.attendance : s.attendance,
         }));
         if (
           snap.houses.length > 0 ||
           snap.employees.length > 0 ||
           snap.schedules.length > 0 ||
           snap.timesheets.length > 0 ||
-          snap.reports.length > 0
+          snap.reports.length > 0 ||
+          snap.programs.length > 0 ||
+          snap.attendance.length > 0
         ) {
           setSyncStatus('synced');
           setLastSyncError(null);
@@ -276,6 +289,32 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       };
       const session: Session = { email: account.email, name: account.name, role: account.role, orgId: state.orgId };
       setState((s) => ({ ...s, accounts: [...s.accounts, account], session }));
+      // Mirror the account to Postgres (hashed password + JWT) so it survives a
+      // new device / fresh deploy, not just this browser. Best-effort: the local
+      // demo account above is the source of truth for this session regardless.
+      setSyncStatus('syncing');
+      syncSignup({
+        name: account.name,
+        email: account.email,
+        password: account.password,
+        role: account.role,
+        orgId: state.orgId,
+        companyId: state.companyId,
+      })
+        .then((res) => {
+          if (res.ok) {
+            setSyncStatus('synced');
+            setLastSyncError(null);
+            if (res.accessToken) setAuthToken(res.accessToken);
+          } else {
+            setSyncStatus('local-only');
+            setLastSyncError(res.error ?? 'signup sync failed');
+          }
+        })
+        .catch((e: unknown) => {
+          setSyncStatus('local-only');
+          setLastSyncError(e instanceof Error ? e.message : 'network error');
+        });
       return { ok: true };
     },
     logout() {
@@ -371,17 +410,22 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       );
     },
     addProgram(p) {
-      setState((s) => ({ ...s, programs: [{ ...p, id: newId('clxprg') }, ...s.programs] }));
-      // No programs endpoint on the API yet — programs remain local-only.
+      const localId = newId('clxprg');
+      setState((s) => ({ ...s, programs: [{ ...p, id: localId }, ...s.programs] }));
+      applySync(localId, () => syncCreate('program', state.orgId, programCreatePayload(p)));
     },
     updateProgram(id, patch) {
+      const current = state.programs.find((p) => p.id === id);
+      const merged = { ...(current ?? { id }), ...patch } as Program;
       setState((s) => ({
         ...s,
         programs: s.programs.map((p) => (p.id === id ? { ...p, ...patch, id } : p)),
       }));
+      applySync(id, () => syncUpdate('program', state.orgId, remoteId(id), programUpdatePayload(merged)));
     },
     deleteProgram(id) {
       setState((s) => ({ ...s, programs: s.programs.filter((p) => p.id !== id) }));
+      applySync(id, () => syncDelete('program', state.orgId, remoteId(id)));
     },
     addSchedule(sh) {
       const localId = newId('clxsch');
@@ -521,7 +565,15 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         createdAt: now.toISOString(),
       };
       setState((s) => ({ ...s, attendance: [entry, ...s.attendance] }));
-      // No attendance endpoint on the API yet — stays local-only, like programs.
+      // Mirror the punch to Postgres so it survives a new device / fresh deploy.
+      // Best-effort: the local row above is the source of truth for this session.
+      const payload = attendanceCreatePayload(entry, remoteId);
+      if (!payload) {
+        setSyncStatus('local-only');
+        setLastSyncError('Clock-in saved on this device — sync its employee first.');
+      } else {
+        applySync(localId, () => syncCreate('attendance', state.orgId, payload));
+      }
       return { ok: true, id: localId };
     },
     clockOut(id) {
@@ -529,15 +581,19 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       if (!entry) return { ok: false, error: 'Attendance record not found.' };
       if (entry.status === 'clocked-out') return { ok: false, error: 'Already clocked out.' };
       const now = new Date();
+      const clockOutAt = now.toISOString();
       // Guard against a clock-out that precedes its own clock-in (clock skew /
       // manual device changes): clamp is impossible here because `now` is the
       // real system time, but we never allow editing either timestamp anyway.
       setState((s) => ({
         ...s,
         attendance: s.attendance.map((a) =>
-          a.id === id ? { ...a, clockOutAt: now.toISOString(), status: 'clocked-out' } : a,
+          a.id === id ? { ...a, clockOutAt, status: 'clocked-out' } : a,
         ),
       }));
+      applySync(id, () =>
+        syncUpdate('attendance', state.orgId, remoteId(id), attendanceUpdatePayload({ clockOutAt, status: 'clocked-out' })),
+      );
       return { ok: true };
     },
     resetDemo() {

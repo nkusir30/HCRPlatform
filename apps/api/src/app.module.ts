@@ -9,6 +9,8 @@ import { EmployeeModule } from './employees/employee.module';
 import { CompanyModule } from './companies/company.module';
 import { HouseModule } from './houses/house.module';
 import { ScheduleModule } from './schedules/schedule.module';
+import { AttendanceModule } from './attendance/attendance.module';
+import { ProgramModule } from './programs/program.module';
 import { BenefitsModule } from './benefits/benefits.module';
 import { ATSModule } from './ats/ats.module';
 import { AIModule } from './ai/ai.module';
@@ -35,6 +37,8 @@ import { ImportUsersEmployeesModule } from './import/import-users-employees.modu
     EmployeeModule,
     TimesheetModule,
     ScheduleModule,
+    AttendanceModule,
+    ProgramModule,
     PayrollModule,
     BenefitsModule,
     ReportModule,

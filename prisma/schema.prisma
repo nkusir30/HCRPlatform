@@ -99,8 +99,13 @@ model Attendance {
   attendanceId String   @unique
   shiftId      String?
   jobId        String?
+  scheduleId   String?
+  houseId      String?
   date         DateTime
+  clockInAt    DateTime?
+  clockOutAt   DateTime?
   status       String   @default("present")
+  source       String   @default("web")
   hours        Float?
   overtimeHrs  Float?
   notes        String?

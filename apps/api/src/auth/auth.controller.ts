@@ -2,6 +2,7 @@ import { Controller, Post, Body, Req, Res, HttpCode } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { CommonService } from '../common/common.service';
+import { SignupDto } from './dto/signup.dto';
 
 export class LoginDto {
   email: string;
@@ -36,6 +37,12 @@ export class AuthController {
   async logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('auth_token');
     return;
+  }
+
+  @Post('signup')
+  async signup(@Body() body: SignupDto) {
+    const result = await this.authService.signup(body);
+    return { access_token: result.access_token, userId: this.common.validateId(result.user.sub) };
   }
 
   @Post('me')
