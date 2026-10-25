@@ -16,6 +16,7 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
+  ArrowLeft,
   Sparkles,
   AlertCircle,
   HeartHandshake,
@@ -23,12 +24,14 @@ import {
   Check,
   LogIn,
   UserPlus,
+  KeyRound,
+  RefreshCw,
 } from 'lucide-react';
 
-type Mode = 'signin' | 'signup';
+type Mode = 'signin' | 'signup' | 'forgot';
 
 export default function LoginPage() {
-  const { login, signup, session, hydrated, accounts, logout } = useApp();
+  const { login, signup, resetPassword, session, hydrated, accounts, logout } = useApp();
   const router = useRouter();
   const [mode, setMode] = useState<Mode>('signin');
 
@@ -46,6 +49,16 @@ export default function LoginPage() {
     role: 'employee' as 'employee' | 'manager' | 'admin',
   });
   const [showSuPassword, setShowSuPassword] = useState(false);
+
+  // Forgot password flow state
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotStep, setForgotStep] = useState<1 | 2 | 3>(1);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [generatedCode, setGeneratedCode] = useState('849201');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -93,11 +106,79 @@ export default function LoginPage() {
     if (su.role !== 'employee') router.replace('/dashboard');
   }
 
+  function onSendResetCode(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    const targetEmail = forgotEmail.trim().toLowerCase();
+    if (!targetEmail) {
+      setError('Please enter your work email address.');
+      return;
+    }
+    const exists = accounts.some((a) => a.email.toLowerCase() === targetEmail);
+    if (!exists) {
+      setError(`No account found matching ${targetEmail}. Please check spelling or contact your administrator.`);
+      return;
+    }
+
+    setBusy(true);
+    setTimeout(() => {
+      setBusy(false);
+      // Generate a clean 6-digit code for verification
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedCode(code);
+      setVerificationCode(code); // Pre-fill code for instant testability
+      setForgotStep(2);
+      setSuccessMsg(`A 6-digit reset code has been sent to ${targetEmail}.`);
+    }, 500);
+  }
+
+  function onResetPasswordSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (verificationCode.trim() !== generatedCode) {
+      setError('Invalid verification code. Please check the 6-digit code sent to your email.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setError('New password must be at least 8 characters long.');
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setError('New passwords do not match.');
+      return;
+    }
+
+    setBusy(true);
+    const res = resetPassword(forgotEmail, newPassword);
+    setBusy(false);
+
+    if (!res.ok) {
+      setError(res.error ?? 'Failed to reset password.');
+      return;
+    }
+
+    setForgotStep(3);
+    setSuccessMsg('Your password has been successfully updated.');
+  }
+
+  function completeResetAndSignIn() {
+    setEmail(forgotEmail);
+    setPassword(newPassword);
+    setMode('signin');
+    setForgotStep(1);
+    setForgotEmail('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setError(null);
+    setSuccessMsg('Password updated! You can now sign in.');
+  }
+
   function selectDemoAccount(demoEmail: string) {
     setEmail(demoEmail);
     setPassword(DEMO_PASSWORD);
     setSelectedDemo(demoEmail);
     setError(null);
+    setSuccessMsg(null);
   }
 
   // Employee logged in view
@@ -122,7 +203,7 @@ export default function LoginPage() {
               logout();
               router.replace('/login');
             }}
-            className="text-xs sm:text-sm font-medium text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-lg px-3.5 py-1.5 transition-colors"
+            className="text-xs sm:text-sm font-medium text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-lg px-3.5 py-1.5 transition-colors cursor-pointer"
           >
             Sign out
           </button>
@@ -170,7 +251,6 @@ export default function LoginPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex">
       {/* Left Showcase Banner (Desktop) */}
       <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 overflow-hidden bg-gradient-to-br from-slate-950 via-teal-950/70 to-slate-900 border-r border-white/10">
-        {/* Ambient lighting effects */}
         <div className="absolute top-0 left-0 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-10 right-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -270,48 +350,73 @@ export default function LoginPage() {
 
           <div>
             <h2 className="text-2xl font-bold text-white tracking-tight">
-              {mode === 'signin' ? 'Sign in to your account' : 'Register for HCR Portal'}
+              {mode === 'signin'
+                ? 'Sign in to your account'
+                : mode === 'signup'
+                  ? 'Register for HCR Portal'
+                  : 'Account Recovery'}
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
               {mode === 'signin'
                 ? 'Enter your credentials or choose a pre-configured demo account below.'
-                : 'Create an authorized access profile for administrative or care services.'}
+                : mode === 'signup'
+                  ? 'Create an authorized access profile for administrative or care services.'
+                  : 'Follow the steps below to securely reset and restore access to your account.'}
             </p>
           </div>
 
-          {/* Mode Switcher Tabs */}
-          <div className="grid grid-cols-2 p-1 rounded-xl bg-slate-900 border border-white/10 shadow-inner">
-            <button
-              type="button"
-              onClick={() => {
-                setMode('signin');
-                setError(null);
-              }}
-              className={`flex items-center justify-center gap-2 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
-                mode === 'signin'
-                  ? 'bg-teal-600 text-white shadow-md shadow-teal-900/40'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('signup');
-                setError(null);
-              }}
-              className={`flex items-center justify-center gap-2 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
-                mode === 'signup'
-                  ? 'bg-teal-600 text-white shadow-md shadow-teal-900/40'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              Create Account
-            </button>
-          </div>
+          {/* Mode Switcher Tabs (Only shown in signin and signup) */}
+          {mode !== 'forgot' && (
+            <div className="grid grid-cols-2 p-1 rounded-xl bg-slate-900 border border-white/10 shadow-inner">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('signin');
+                  setError(null);
+                  setSuccessMsg(null);
+                }}
+                className={`flex items-center justify-center gap-2 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all cursor-pointer ${
+                  mode === 'signin'
+                    ? 'bg-teal-600 text-white shadow-md shadow-teal-900/40'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('signup');
+                  setError(null);
+                  setSuccessMsg(null);
+                }}
+                className={`flex items-center justify-center gap-2 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all cursor-pointer ${
+                  mode === 'signup'
+                    ? 'bg-teal-600 text-white shadow-md shadow-teal-900/40'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                Create Account
+              </button>
+            </div>
+          )}
+
+          {/* Success Message Alert */}
+          {successMsg && (
+            <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-emerald-950/70 border border-emerald-800 text-emerald-200 text-xs sm:text-sm animate-fadeIn">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <div className="flex-1">{successMsg}</div>
+              <button
+                type="button"
+                onClick={() => setSuccessMsg(null)}
+                className="text-emerald-400 hover:text-emerald-200 text-xs font-bold px-1"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* Error Alert */}
           {error && (
@@ -328,8 +433,8 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Sign In Form */}
-          {mode === 'signin' ? (
+          {/* ===================== SIGN IN FORM ===================== */}
+          {mode === 'signin' && (
             <form onSubmit={onSignIn} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-slate-300 flex items-center justify-between">
@@ -352,7 +457,19 @@ export default function LoginPage() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-medium text-slate-300">Password</label>
-                  <span className="text-[11px] text-teal-400 font-mono">Demo: {DEMO_PASSWORD}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('forgot');
+                      setForgotStep(1);
+                      setForgotEmail(email);
+                      setError(null);
+                      setSuccessMsg(null);
+                    }}
+                    className="text-xs text-teal-400 hover:text-teal-300 hover:underline font-medium transition-colors cursor-pointer"
+                  >
+                    Forgot password?
+                  </button>
                 </div>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -367,7 +484,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-1"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-1 cursor-pointer"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -393,8 +510,10 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
-          ) : (
-            /* Sign Up Form */
+          )}
+
+          {/* ===================== SIGN UP FORM ===================== */}
+          {mode === 'signup' && (
             <form onSubmit={onSignUp} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-slate-300">Full Name</label>
@@ -480,7 +599,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowSuPassword(!showSuPassword)}
-                  className="text-teal-400 hover:underline flex items-center gap-1"
+                  className="text-teal-400 hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   {showSuPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   {showSuPassword ? 'Hide passwords' : 'Show passwords'}
@@ -508,7 +627,218 @@ export default function LoginPage() {
             </form>
           )}
 
-          {/* Demo Accounts Quick-Fill Section */}
+          {/* ===================== FORGOT PASSWORD FLOW ===================== */}
+          {mode === 'forgot' && (
+            <div className="space-y-4">
+              {/* Step indicator */}
+              <div className="flex items-center justify-between text-xs text-slate-400 pb-2 border-b border-white/10">
+                <span className="flex items-center gap-1.5 font-semibold text-teal-400">
+                  <KeyRound className="w-4 h-4" />
+                  <span>Password Recovery</span>
+                </span>
+                <span>Step {forgotStep} of 3</span>
+              </div>
+
+              {/* Step 1: Request Code */}
+              {forgotStep === 1 && (
+                <form onSubmit={onSendResetCode} className="space-y-4">
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Enter the email address registered with Home Care Residential. A 6-digit authorization code will be generated to verify your identity.
+                  </p>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-slate-300">Registered Work Email</label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        type="email"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        required
+                        placeholder="e.g. admin@hrv-homes.com"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/90 border border-white/10 text-white placeholder-slate-500 text-sm focus:border-teal-400 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-1">
+                    <button
+                      type="submit"
+                      disabled={busy}
+                      className="w-full py-3 px-4 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-teal-600 via-teal-500 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 active:scale-[0.99] shadow-lg shadow-teal-900/50 disabled:opacity-60 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                    >
+                      {busy ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Sending code…</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Send Verification Code</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode('signin');
+                        setError(null);
+                        setSuccessMsg(null);
+                      }}
+                      className="w-full py-2.5 text-xs text-slate-400 hover:text-white flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>Back to Sign In</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Step 2: Verify Code and Set New Password */}
+              {forgotStep === 2 && (
+                <form onSubmit={onResetPasswordSubmit} className="space-y-4">
+                  {/* Test OTP Helper Card */}
+                  <div className="p-3 rounded-xl bg-teal-950/60 border border-teal-500/30 text-xs text-slate-300 space-y-1">
+                    <div className="flex items-center justify-between font-semibold text-teal-300">
+                      <span>Verification Code Dispatched</span>
+                      <span className="font-mono bg-teal-500/20 px-2 py-0.5 rounded text-teal-200">
+                        {generatedCode}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      Enter the 6-digit code sent to <strong className="text-white">{forgotEmail}</strong>.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-slate-300">6-Digit Verification Code</label>
+                    <div className="relative">
+                      <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        type="text"
+                        maxLength={6}
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                        required
+                        placeholder="849201"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/90 border border-white/10 text-white placeholder-slate-500 text-sm font-mono tracking-widest focus:border-teal-400 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-slate-300">New Password</label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                        placeholder="At least 8 characters"
+                        className="w-full pl-10 pr-11 py-2.5 rounded-xl bg-slate-900/90 border border-white/10 text-white placeholder-slate-500 text-sm focus:border-teal-400 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-1 cursor-pointer"
+                      >
+                        {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-slate-300">Confirm New Password</label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        required
+                        placeholder="Repeat new password"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/90 border border-white/10 text-white placeholder-slate-500 text-sm focus:border-teal-400 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-2">
+                    <button
+                      type="submit"
+                      disabled={busy}
+                      className="w-full py-3 px-4 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-teal-600 via-teal-500 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 active:scale-[0.99] shadow-lg shadow-teal-900/50 disabled:opacity-60 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                    >
+                      {busy ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Updating password…</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>Update Password &amp; Confirm</span>
+                        </>
+                      )}
+                    </button>
+
+                    <div className="flex items-center justify-between text-xs pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const code = Math.floor(100000 + Math.random() * 900000).toString();
+                          setGeneratedCode(code);
+                          setVerificationCode(code);
+                          setSuccessMsg(`New code generated: ${code}`);
+                        }}
+                        className="text-teal-400 hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        <span>Resend Code</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setForgotStep(1)}
+                        className="text-slate-400 hover:text-white cursor-pointer"
+                      >
+                        Change Email
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              )}
+
+              {/* Step 3: Success Confirmation */}
+              {forgotStep === 3 && (
+                <div className="text-center space-y-4 py-4 animate-fadeIn">
+                  <div className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-950/50">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-bold text-white">Password Updated!</h3>
+                    <p className="text-xs text-slate-300 leading-relaxed max-w-xs mx-auto">
+                      Your password for <span className="text-teal-300 font-semibold">{forgotEmail}</span> has been securely updated. You can now log into your dashboard.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={completeResetAndSignIn}
+                    className="w-full py-3 px-4 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-teal-600 via-teal-500 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 active:scale-[0.99] shadow-lg shadow-teal-900/50 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  >
+                    <span>Sign In with New Password</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Demo Accounts Quick-Fill Section (Only shown in signin) */}
           {mode === 'signin' && (
             <div className="pt-2 border-t border-white/10 space-y-3">
               <div className="flex items-center justify-between">

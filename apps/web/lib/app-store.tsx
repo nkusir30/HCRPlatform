@@ -125,6 +125,7 @@ interface AppStore extends AppState {
   lastSyncError: string | null;
   login: (email: string, password: string) => { ok: boolean; error?: string };
   signup: (input: { name: string; email: string; password: string; role: Session['role'] }) => { ok: boolean; error?: string };
+  resetPassword: (email: string, newPassword: string) => { ok: boolean; error?: string };
   logout: () => void;
   addEmployee: (e: Omit<Employee, 'id'>) => void;
   updateEmployee: (id: string, patch: Omit<Employee, 'id'>) => void;
@@ -170,6 +171,15 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      /* quota or private browsing */
+    }
+  }, [hydrated, state]);
 
   useEffect(() => {
     if (ready) return;
@@ -315,6 +325,23 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           setSyncStatus('local-only');
           setLastSyncError(e instanceof Error ? e.message : 'network error');
         });
+      return { ok: true };
+    },
+    resetPassword(email, newPassword) {
+      const normalized = email.trim().toLowerCase();
+      const account = state.accounts.find((a) => a.email.toLowerCase() === normalized);
+      if (!account) {
+        return { ok: false, error: 'No account found with this email address.' };
+      }
+      if (!newPassword || newPassword.length < 8) {
+        return { ok: false, error: 'Password must be at least 8 characters long.' };
+      }
+      setState((s) => ({
+        ...s,
+        accounts: s.accounts.map((a) =>
+          a.email.toLowerCase() === normalized ? { ...a, password: newPassword } : a,
+        ),
+      }));
       return { ok: true };
     },
     logout() {
