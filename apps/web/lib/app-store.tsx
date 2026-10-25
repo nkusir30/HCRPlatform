@@ -144,7 +144,7 @@ interface AppStore extends AppState {
   updateTimesheet: (id: string, patch: Omit<Timesheet, 'id'>) => void;
   deleteTimesheet: (id: string) => void;
   addReport: (r: Omit<Report, 'id' | 'reportId' | 'createdAt' | 'status'>) => Report;
-  updateReport: (id: string, patch: Pick<Report, 'type' | 'parameters'>) => void;
+  updateReport: (id: string, patch: Partial<Omit<Report, 'id' | 'reportId' | 'createdAt'>>) => void;
   deleteReport: (id: string) => void;
   setTimesheetStatus: (id: string, status: Timesheet['status']) => void;
   // Time & attendance. Times come from the system clock at call time and are

@@ -86,12 +86,19 @@ export type ReportType =
   | 'custom';
 export type ReportStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
+export type ReportScope = 'general' | 'house' | 'employee';
+
 export interface Report {
   id: string;
   reportId: string;
   type: ReportType;
   status: ReportStatus;
   parameters: string;
+  scope?: ReportScope;
+  targetEmployeeId?: string;
+  targetHouseId?: string;
+  startDate?: string;
+  endDate?: string;
   createdAt: string;
 }
 

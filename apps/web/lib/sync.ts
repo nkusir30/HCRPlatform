@@ -179,10 +179,10 @@ export function reportCreatePayload(
   });
 }
 
-export function reportUpdatePayload(r: Pick<Report, 'type' | 'parameters'>): Record<string, unknown> {
+export function reportUpdatePayload(r: Partial<Pick<Report, 'type' | 'parameters'>>): Record<string, unknown> {
   return clean({
     type: r.type,
-    parameters: { note: r.parameters },
+    parameters: r.parameters ? { note: r.parameters } : undefined,
   });
 }
 
