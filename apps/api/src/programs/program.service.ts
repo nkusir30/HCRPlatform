@@ -34,7 +34,7 @@ export class ProgramService {
     const existing = await this.prisma.program.findFirst({ where: { id, orgId } });
     if (!existing) throw new NotFoundException(`Program #${id} not found`);
 
-    const updates: Partial<UpdateProgramDto> = {};
+    const updates: Record<string, any> = {};
     if (dto.name !== undefined) updates.name = dto.name;
     if (dto.code !== undefined) updates.code = dto.code;
     if (dto.description !== undefined) updates.description = dto.description;

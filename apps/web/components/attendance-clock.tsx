@@ -3,15 +3,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/lib/app-store';
 import { localDateISO, formatClock, formatDuration, cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Clock,
+  Play,
+  Square,
+  Home,
+  Calendar,
+  User,
+  ShieldCheck,
+  CheckCircle2,
+  AlertCircle,
+  Timer,
+} from 'lucide-react';
 
-// Time & Attendance clock for a logged-in employee. Renders the employee's
-// shift for *today* (matched by day-of-week) and lets them clock in/out.
-//
-// Real-time, no backdating: both timestamps are captured from `new Date()` at
-// the instant the button is pressed inside the store (clockIn/clockOut). The UI
-// only ever displays them — there is no input to type or edit a clock time.
 export function AttendanceClock({ className }: { className?: string }) {
   const { session, employees, schedules, houses, attendance, clockIn, clockOut } = useApp();
 
@@ -37,14 +42,14 @@ export function AttendanceClock({ className }: { className?: string }) {
     return attendance.find((a) => a.employeeId === employee.id && a.date === today);
   }, [employee, attendance, today]);
 
-  // Live ticker so the elapsed time updates every second while on the clock.
+  // Live ticker so the elapsed time and clock update live
   const [now, setNow] = useState(() => Date.now());
   const clockedIn = todayRecord?.status === 'clocked-in';
+
   useEffect(() => {
-    if (!clockedIn) return;
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
-  }, [clockedIn]);
+  }, []);
 
   const house = todayShift ? houses.find((h) => h.id === todayShift.houseId) : undefined;
   const [msg, setMsg] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
@@ -52,134 +57,235 @@ export function AttendanceClock({ className }: { className?: string }) {
   function onClockIn() {
     if (!employee) return;
     setMsg(null);
-    const res = clockIn({ employeeId: employee.id, scheduleId: todayShift?.id, houseId: house?.id, date: today, source: 'web' });
-    if (res.ok)
+    const res = clockIn({
+      employeeId: employee.id,
+      scheduleId: todayShift?.id,
+      houseId: house?.id,
+      date: today,
+      source: 'web',
+    });
+    if (res.ok) {
       setMsg({
         kind: 'success',
-        text: `Clocked in at ${formatClock(new Date().toISOString())}${house ? ` · ${house.name}` : ''}.`,
+        text: `Successfully clocked in at ${formatClock(new Date().toISOString())}${
+          house ? ` for ${house.name}` : ''
+        }.`,
       });
-    else setMsg({ kind: 'error', text: res.error ?? 'Could not clock in.' });
+    } else {
+      setMsg({ kind: 'error', text: res.error ?? 'Could not clock in.' });
+    }
   }
 
   function onClockOut() {
     if (!todayRecord) return;
     setMsg(null);
     const res = clockOut(todayRecord.id);
-    if (res.ok) setMsg({ kind: 'success', text: `Clocked out at ${formatClock(new Date().toISOString())}.` });
-    else setMsg({ kind: 'error', text: res.error ?? 'Could not clock out.' });
+    if (res.ok) {
+      setMsg({
+        kind: 'success',
+        text: `Successfully clocked out at ${formatClock(new Date().toISOString())}. Good job!`,
+      });
+    } else {
+      setMsg({ kind: 'error', text: res.error ?? 'Could not clock out.' });
+    }
   }
 
   if (!employee) {
     return (
-      <div className={cn('rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-5', className)}>
-        <h3 className="text-base font-semibold">Time &amp; Attendance</h3>
-        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-          Your account isn’t linked to an employee roster record yet, so there’s no shift to clock into.
-          An administrator can connect your login to your employee profile.
+      <div
+        className={cn(
+          'rounded-2xl border border-white/10 bg-slate-900/60 p-6 text-center text-slate-300 backdrop-blur-md',
+          className,
+        )}
+      >
+        <div className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center mx-auto mb-3">
+          <User className="w-6 h-6" />
+        </div>
+        <h3 className="text-base font-bold text-white">Roster Profile Connection Required</h3>
+        <p className="mt-1.5 text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+          Your login (<code className="text-teal-300">{session?.email}</code>) has not been linked to a roster employee profile. Please contact your HCR house manager.
         </p>
       </div>
     );
   }
 
+  const liveDateString = new Date(now).toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+  const liveTimeString = new Date(now).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+
   return (
-    <div className={cn('rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-5 shadow-sm', className)}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-base font-semibold">Time &amp; Attendance</h3>
-          <p className="text-sm text-[var(--color-text-secondary)]">
-            {employee.firstName} {employee.lastName} · {employee.employeeCode}
-          </p>
-        </div>
-        {clockedIn ? (
-          <Badge variant="success">On the clock</Badge>
-        ) : todayRecord ? (
-          <Badge variant="muted">Completed</Badge>
-        ) : (
-          <Badge variant="warning">Not clocked in</Badge>
-        )}
-      </div>
-
-      {/* Today's shift */}
-      <div className="mt-4 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-border-subtle)]/40 p-3">
-        <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)]">Today’s shift</div>
-        {todayShift ? (
-          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-            <span className="font-medium">{todayShift.startTime} – {todayShift.endTime}</span>
-            {house ? <span className="text-[var(--color-text-secondary)]">{house.name}</span> : null}
-            <span className="text-[var(--color-text-muted)]">{todayShift.scheduleType}</span>
+    <div
+      className={cn(
+        'rounded-2xl border border-white/10 bg-slate-900/90 shadow-2xl overflow-hidden backdrop-blur-xl',
+        className,
+      )}
+    >
+      {/* Top Header Card */}
+      <div className="p-5 border-b border-white/10 bg-slate-950/40 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center justify-center font-bold">
+            {employee.firstName[0]}
+            {employee.lastName[0]}
           </div>
-        ) : (
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-            No shift is scheduled for you today. Clock in/out below is still available for record-keeping.
-          </p>
-        )}
-      </div>
-
-      {/* Live clock + actions */}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)]">
-            {clockedIn ? 'Clocked in at' : todayRecord ? 'Session total' : 'Status'}
-          </div>
-          <div className="text-2xl font-semibold tabular-nums">
-            {clockedIn
-              ? formatClock(todayRecord?.clockInAt)
-              : todayRecord
-                ? formatDuration(todayRecord.clockInAt, todayRecord.clockOutAt)
-                : 'Not started'}
-          </div>
-          {clockedIn && todayRecord ? (
-            <div className="text-sm text-[var(--color-success)]">
-              Elapsed {formatDuration(todayRecord.clockInAt, now)}
+          <div>
+            <div className="text-sm font-bold text-white flex items-center gap-2">
+              <span>
+                {employee.firstName} {employee.lastName}
+              </span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-slate-300">
+                {employee.employeeCode}
+              </span>
             </div>
-          ) : null}
+            <div className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
+              <span>Section 21 Direct Support Professional</span>
+            </div>
+          </div>
         </div>
 
-        <div className="flex gap-2">
+        <div>
           {clockedIn ? (
-            <Button variant="destructive" onClick={onClockOut}>Clock out</Button>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              On The Clock
+            </span>
           ) : todayRecord ? (
-            <span className="self-center text-sm text-[var(--color-text-muted)]">
-              Clocked out at {formatClock(todayRecord.clockOutAt)}
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-white/10">
+              <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
+              Shift Completed
             </span>
           ) : (
-            <Button variant="success" onClick={onClockIn}>Clock in</Button>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+              <Clock className="w-3.5 h-3.5" />
+              Not Clocked In
+            </span>
           )}
         </div>
       </div>
 
-      {/* Recorded punch times (read-only) */}
-      {todayRecord ? (
-        <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-[var(--color-border)] pt-3 text-sm">
-          <div>
-            <dt className="text-xs text-[var(--color-text-muted)]">Clock in</dt>
-            <dd className="font-medium tabular-nums">{formatClock(todayRecord.clockInAt)}</dd>
+      <div className="p-6 space-y-6">
+        {/* Today's Shift Overview */}
+        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-2">
+            <Calendar className="w-3.5 h-3.5 text-teal-400" />
+            <span>Scheduled Shift · {liveDateString}</span>
           </div>
-          <div>
-            <dt className="text-xs text-[var(--color-text-muted)]">Clock out</dt>
-            <dd className="font-medium tabular-nums">{formatClock(todayRecord.clockOutAt)}</dd>
-          </div>
-        </dl>
-      ) : null}
-
-      <p className="mt-3 text-xs text-[var(--color-text-muted)]">
-        Times are recorded automatically from the device clock and can’t be edited — no backdating.
-      </p>
-
-      {msg ? (
-        <div
-          className={cn(
-            'mt-3 rounded-md px-3 py-2 text-sm',
-            msg.kind === 'success'
-              ? 'bg-[var(--color-success-light)] text-[var(--color-success)]'
-              : 'bg-[var(--color-danger-light)] text-[var(--color-danger)]',
+          {todayShift ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+              <div className="flex items-center gap-2 text-white font-semibold">
+                <Clock className="w-4 h-4 text-teal-400" />
+                <span>
+                  {todayShift.startTime} – {todayShift.endTime}
+                </span>
+                <span className="text-xs font-normal text-slate-400 capitalize">({todayShift.scheduleType})</span>
+              </div>
+              {house && (
+                <div className="flex items-center gap-1.5 text-xs text-slate-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-lg">
+                  <Home className="w-3.5 h-3.5 text-teal-400" />
+                  <span>{house.name}</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400">
+              No predetermined shift is scheduled on your calendar for today. You can still record attendance for on-call or unscheduled coverage.
+            </p>
           )}
-          role="status"
-        >
-          {msg.text}
         </div>
-      ) : null}
+
+        {/* Live Terminal Clock Display */}
+        <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-950 to-slate-900 border border-white/10 text-center space-y-2 shadow-inner">
+          <div className="text-[11px] uppercase tracking-widest text-teal-400 font-semibold flex items-center justify-center gap-1.5">
+            <Timer className="w-3.5 h-3.5" />
+            <span>Live System Time (EVV Captured)</span>
+          </div>
+          <div className="text-3xl sm:text-4xl font-extrabold text-white tracking-wider font-mono">
+            {liveTimeString}
+          </div>
+          {clockedIn && todayRecord && (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-medium">
+              <span>Active Duration:</span>
+              <span className="font-mono font-bold">{formatDuration(todayRecord.clockInAt, now)}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Big Action Buttons */}
+        <div>
+          {clockedIn ? (
+            <button
+              type="button"
+              onClick={onClockOut}
+              className="w-full py-3.5 px-6 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 active:scale-[0.99] shadow-lg shadow-red-950/60 flex items-center justify-center gap-2 cursor-pointer transition-all"
+            >
+              <Square className="w-4 h-4 fill-current" />
+              <span>Clock Out of Shift</span>
+            </button>
+          ) : todayRecord ? (
+            <div className="p-3.5 rounded-xl bg-teal-950/40 border border-teal-500/30 text-center text-xs text-teal-300 font-medium">
+              Shift completed. Today&apos;s verified punch has been safely recorded to payroll.
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onClockIn}
+              className="w-full py-3.5 px-6 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-600 hover:from-teal-500 hover:to-emerald-500 active:scale-[0.99] shadow-lg shadow-teal-950/60 flex items-center justify-center gap-2 cursor-pointer transition-all"
+            >
+              <Play className="w-4 h-4 fill-current" />
+              <span>Clock In for Today</span>
+            </button>
+          )}
+        </div>
+
+        {/* Punch Time Log Summary */}
+        {todayRecord && (
+          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/10 text-xs">
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+              <div className="text-slate-400 font-medium">Clock In Time</div>
+              <div className="text-sm font-bold text-white font-mono mt-1">
+                {formatClock(todayRecord.clockInAt)}
+              </div>
+            </div>
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+              <div className="text-slate-400 font-medium">Clock Out Time</div>
+              <div className="text-sm font-bold text-white font-mono mt-1">
+                {todayRecord.clockOutAt ? formatClock(todayRecord.clockOutAt) : 'Pending…'}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Feedback message */}
+        {msg && (
+          <div
+            className={cn(
+              'p-3.5 rounded-xl text-xs sm:text-sm flex items-start gap-2',
+              msg.kind === 'success'
+                ? 'bg-emerald-950/60 border border-emerald-700/60 text-emerald-200'
+                : 'bg-red-950/60 border border-red-700/60 text-red-200',
+            )}
+          >
+            {msg.kind === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+            )}
+            <span>{msg.text}</span>
+          </div>
+        )}
+
+        <div className="text-center text-[11px] text-slate-500">
+          Timestamps are captured from device EVV clock and cannot be manually modified or backdated.
+        </div>
+      </div>
     </div>
   );
 }
-
