@@ -143,7 +143,7 @@ interface AppStore extends AppState {
   addTimesheet: (t: Omit<Timesheet, 'id'>) => void;
   updateTimesheet: (id: string, patch: Omit<Timesheet, 'id'>) => void;
   deleteTimesheet: (id: string) => void;
-  addReport: (r: Omit<Report, 'id' | 'reportId' | 'createdAt' | 'status'>) => void;
+  addReport: (r: Omit<Report, 'id' | 'reportId' | 'createdAt' | 'status'>) => Report;
   updateReport: (id: string, patch: Pick<Report, 'type' | 'parameters'>) => void;
   deleteReport: (id: string) => void;
   setTimesheetStatus: (id: string, status: Timesheet['status']) => void;
@@ -535,19 +535,18 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       const n = state.reports.length + 1001;
       const reportId = `RPT-${n}`;
       const localId = newId('clxrep');
-      setState((s) => {
-        const report: Report = {
-          ...r,
-          id: localId,
-          reportId,
-          status: 'pending',
-          createdAt: new Date().toISOString(),
-        };
-        return { ...s, reports: [report, ...s.reports] };
-      });
+      const report: Report = {
+        ...r,
+        id: localId,
+        reportId,
+        status: 'completed',
+        createdAt: new Date().toISOString(),
+      };
+      setState((s) => ({ ...s, reports: [report, ...s.reports] }));
       applySync(localId, () =>
-        syncCreate('report', state.orgId, reportCreatePayload({ ...r, reportId, status: 'pending' })),
+        syncCreate('report', state.orgId, reportCreatePayload({ ...r, reportId, status: 'completed' })),
       );
+      return report;
     },
     updateReport(id, patch) {
       setState((s) => ({
