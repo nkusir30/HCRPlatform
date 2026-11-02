@@ -313,15 +313,11 @@ export default function LoginPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 flex flex-col justify-between p-4 sm:p-6 lg:p-8">
         <header className="max-w-4xl w-full mx-auto flex items-center justify-between border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-300 font-bold shadow-lg shadow-teal-900/30">
-              HCR
-            </div>
-            <div>
-              <div className="font-semibold text-white tracking-wide text-sm sm:text-base">
-                Home Care Residential
-              </div>
-              <div className="text-xs text-teal-300/80">Staff Attendance &amp; EVV Terminal</div>
-            </div>
+            <img
+              src="/hcr-nav-logo.png"
+              alt="Home Care Residential, LLC"
+              className="h-9 sm:h-11 w-auto object-contain"
+            />
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -384,12 +380,38 @@ export default function LoginPage() {
   const employerDemoAccounts = DEMO_ACCOUNTS.filter((a) => a.role !== 'employee');
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col lg:flex-row">
-      
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       {/* ========================================================= */}
-      {/* COMPONENT 1 (LEFT SIDE): EMPLOYER SIGN-IN & CAREGIVER REG */}
+      {/* TOP NAVIGATION HEADER WITH OFFICIAL HCR LOGO               */}
       {/* ========================================================= */}
-      <div className="w-full lg:w-1/2 relative flex flex-col justify-between p-6 sm:p-10 lg:p-12 overflow-y-auto bg-gradient-to-br from-slate-950 via-teal-950/70 to-slate-900 border-b lg:border-b-0 lg:border-r border-white/10">
+      <header className="w-full border-b border-white/10 bg-slate-950/95 backdrop-blur-md px-4 sm:px-8 py-3 flex items-center justify-between z-30 sticky top-0 shadow-lg shadow-black/50">
+        <div className="flex items-center gap-3">
+          <img
+            src="/hcr-nav-logo.png"
+            alt="Home Care Residential, LLC — Home Is Where We Are Safe And Loved."
+            className="h-9 sm:h-11 w-auto max-w-[280px] sm:max-w-[380px] object-contain"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal-500/10 text-teal-300 border border-teal-500/25">
+            <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
+            <span>MaineCare Section 21 Certified</span>
+          </div>
+
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/25">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Dual Portal Active</span>
+          </div>
+        </div>
+      </header>
+
+      {/* Main 50/50 Split Container */}
+      <div className="flex-1 flex flex-col lg:flex-row">
+        {/* ========================================================= */}
+        {/* COMPONENT 1 (LEFT SIDE): EMPLOYER SIGN-IN & CAREGIVER REG */}
+        {/* ========================================================= */}
+        <div className="w-full lg:w-1/2 relative flex flex-col justify-between p-6 sm:p-10 lg:p-12 overflow-y-auto bg-gradient-to-br from-slate-950 via-teal-950/70 to-slate-900 border-b lg:border-b-0 lg:border-r border-white/10">
         <div className="absolute top-0 left-0 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         {/* Top Employer Branding */}
@@ -1098,6 +1120,9 @@ export default function LoginPage() {
         </div>
       </div>
 
+      </div>
     </div>
   );
 }
+
+
