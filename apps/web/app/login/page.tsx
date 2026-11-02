@@ -24,6 +24,9 @@ import {
   HeartHandshake,
   Phone,
   Home,
+  ArrowUpRight,
+  Menu,
+  X,
 } from 'lucide-react';
 
 type Mode = 'signin' | 'signup' | 'forgot';
@@ -83,6 +86,8 @@ export default function LoginPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
 
   const [busy, setBusy] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [activeInfoModal, setActiveInfoModal] = useState<'About' | 'Services' | 'Daily life' | null>(null);
 
   // Live time ticker for Time & Attendance Kiosk
   const [kioskTime, setKioskTime] = useState(() => new Date());
@@ -316,7 +321,7 @@ export default function LoginPage() {
             <img
               src="/hcr-nav-logo.png"
               alt="Home Care Residential, LLC"
-              className="h-9 sm:h-11 w-auto object-contain"
+              className="h-12 sm:h-16 w-auto object-contain"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -382,36 +387,223 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       {/* ========================================================= */}
-      {/* TOP NAVIGATION HEADER WITH OFFICIAL HCR LOGO               */}
+      {/* TOP NAVIGATION HEADER WITH OFFICIAL HCR LOGO (LARGE)       */}
       {/* ========================================================= */}
-      <header className="w-full border-b border-white/10 bg-slate-950/95 backdrop-blur-md px-4 sm:px-8 py-3 flex items-center justify-between z-30 sticky top-0 shadow-lg shadow-black/50">
-        <div className="flex items-center gap-3">
+      <header className="w-full border-b border-white/15 bg-black px-4 sm:px-8 lg:px-12 py-3.5 sm:py-4 flex items-center justify-between z-30 sticky top-0 shadow-xl shadow-black/80">
+        {/* Left: Large Visible Brand Logo */}
+        <div className="flex items-center">
           <img
             src="/hcr-nav-logo.png"
             alt="Home Care Residential, LLC — Home Is Where We Are Safe And Loved."
-            className="h-9 sm:h-11 w-auto max-w-[280px] sm:max-w-[380px] object-contain"
+            className="h-14 sm:h-18 md:h-20 lg:h-22 w-auto max-h-[85px] object-contain cursor-pointer transition-transform hover:scale-[1.01]"
+            onClick={() => router.push('/login')}
           />
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal-500/10 text-teal-300 border border-teal-500/25">
-            <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
-            <span>MaineCare Section 21 Certified</span>
-          </div>
+        {/* Right: Desktop Navigation Links matching user design */}
+        <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-medium text-white/90">
+          <button
+            type="button"
+            onClick={() => setActiveInfoModal('About')}
+            className="hover:text-white transition-colors cursor-pointer"
+          >
+            About
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveInfoModal('Services')}
+            className="hover:text-white transition-colors cursor-pointer"
+          >
+            Services
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveInfoModal('Daily life')}
+            className="hover:text-white transition-colors cursor-pointer"
+          >
+            Daily life
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode('signup');
+              setSu((prev) => ({ ...prev, role: 'employee' }));
+              const el = document.getElementById('employer-section');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="hover:text-white transition-colors cursor-pointer"
+          >
+            Careers
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const el = document.getElementById('attendance-terminal-section');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="hover:text-emerald-300 transition-colors cursor-pointer font-medium"
+          >
+            Employee services
+          </button>
+          <a
+            href="mailto:contact@homecareresidential.com?subject=HCR%20Platform%20Inquiry"
+            className="border border-white/80 hover:border-white px-4 py-2 rounded-lg text-white font-medium text-sm flex items-center gap-1.5 transition-all hover:bg-white/10"
+          >
+            <span>Contact</span>
+            <ArrowUpRight className="w-4 h-4" />
+          </a>
+        </nav>
 
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/25">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Dual Portal Active</span>
-          </div>
+        {/* Mobile Hamburger & Quick Contact */}
+        <div className="lg:hidden flex items-center gap-2">
+          <a
+            href="mailto:contact@homecareresidential.com?subject=HCR%20Platform%20Inquiry"
+            className="border border-white/70 hover:border-white px-2.5 py-1.5 rounded-lg text-white text-xs font-medium flex items-center gap-1"
+          >
+            <span>Contact</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </a>
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen(!mobileNavOpen)}
+            className="p-2 rounded-lg border border-white/20 text-white hover:bg-white/10"
+            aria-label="Toggle navigation menu"
+          >
+            {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </header>
+
+      {/* Mobile Navigation Drawer */}
+      {mobileNavOpen && (
+        <div className="lg:hidden bg-slate-900/95 border-b border-white/10 px-6 py-4 space-y-3 z-30">
+          <div className="flex flex-col gap-2.5 text-sm font-medium text-slate-200">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveInfoModal('About');
+                setMobileNavOpen(false);
+              }}
+              className="text-left py-1 hover:text-white"
+            >
+              About
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveInfoModal('Services');
+                setMobileNavOpen(false);
+              }}
+              className="text-left py-1 hover:text-white"
+            >
+              Services
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveInfoModal('Daily life');
+                setMobileNavOpen(false);
+              }}
+              className="text-left py-1 hover:text-white"
+            >
+              Daily life
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('signup');
+                setSu((prev) => ({ ...prev, role: 'employee' }));
+                setMobileNavOpen(false);
+                const el = document.getElementById('employer-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="text-left py-1 hover:text-white"
+            >
+              Careers (Register Caregiver)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileNavOpen(false);
+                const el = document.getElementById('attendance-terminal-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="text-left py-1 text-emerald-300 font-semibold hover:text-emerald-200"
+            >
+              Employee services (Attendance Kiosk)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Informational Modal */}
+      {activeInfoModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-white/20 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative">
+            <button
+              type="button"
+              onClick={() => setActiveInfoModal(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-teal-500/20 border border-teal-500/30 flex items-center justify-center text-teal-300">
+                <Building2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">{activeInfoModal}</h3>
+                <p className="text-xs text-teal-400">Home Care Residential, LLC</p>
+              </div>
+            </div>
+
+            <div className="text-sm text-slate-300 leading-relaxed space-y-2">
+              {activeInfoModal === 'About' && (
+                <p>
+                  Home Care Residential, LLC provides specialized 24/7 MaineCare Section 21
+                  residential habilitation and community support services across Maine.
+                  Our mission is rooted in the belief that &ldquo;Home Is Where We Are Safe And Loved.&rdquo;
+                </p>
+              )}
+              {activeInfoModal === 'Services' && (
+                <ul className="space-y-1.5 list-disc list-inside text-xs sm:text-sm">
+                  <li>24/7 Residential Habilitation &amp; Specialized Group Home Care</li>
+                  <li>Community Support and Life Skills Coaching</li>
+                  <li>Certified Residential Medication Administration (CRMA)</li>
+                  <li>Crisis Respite &amp; Behavioral Support Plans</li>
+                  <li>Automated Electronic Visit Verification (EVV) &amp; Time Tracking</li>
+                </ul>
+              )}
+              {activeInfoModal === 'Daily life' && (
+                <p>
+                  Residents at Maple, Oak, Pine, and Birch houses experience community inclusion,
+                  personalized skill building, nutritious meal planning, and caring support tailored
+                  to their individual Person-Centered Plans (PCP).
+                </p>
+              )}
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setActiveInfoModal(null)}
+                className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-medium text-xs cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main 50/50 Split Container */}
       <div className="flex-1 flex flex-col lg:flex-row">
         {/* ========================================================= */}
         {/* COMPONENT 1 (LEFT SIDE): EMPLOYER SIGN-IN & CAREGIVER REG */}
         {/* ========================================================= */}
-        <div className="w-full lg:w-1/2 relative flex flex-col justify-between p-6 sm:p-10 lg:p-12 overflow-y-auto bg-gradient-to-br from-slate-950 via-teal-950/70 to-slate-900 border-b lg:border-b-0 lg:border-r border-white/10">
+        <div id="employer-section" className="w-full lg:w-1/2 relative flex flex-col justify-between p-6 sm:p-10 lg:p-12 overflow-y-auto bg-gradient-to-br from-slate-950 via-teal-950/70 to-slate-900 border-b lg:border-b-0 lg:border-r border-white/10">
         <div className="absolute top-0 left-0 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         {/* Top Employer Branding */}
@@ -962,7 +1154,7 @@ export default function LoginPage() {
       {/* ========================================================= */}
       {/* COMPONENT 2 (RIGHT SIDE): TIME & ATTENDANCE LOGIN ONLY */}
       {/* ========================================================= */}
-      <div className="w-full lg:w-1/2 relative flex flex-col justify-between p-6 sm:p-10 lg:p-12 overflow-y-auto bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/40">
+      <div id="attendance-terminal-section" className="w-full lg:w-1/2 relative flex flex-col justify-between p-6 sm:p-10 lg:p-12 overflow-y-auto bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/40">
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         {/* Top Caregiver Header */}
