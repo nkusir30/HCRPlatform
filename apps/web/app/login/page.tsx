@@ -22,12 +22,14 @@ import {
   UserPlus,
   KeyRound,
   HeartHandshake,
+  Phone,
+  Home,
 } from 'lucide-react';
 
 type Mode = 'signin' | 'signup' | 'forgot';
 
 export default function LoginPage() {
-  const { login, signup, resetPassword, session, hydrated, accounts, logout } = useApp();
+  const { login, signup, resetPassword, session, hydrated, accounts, logout, houses } = useApp();
   const router = useRouter();
 
   // Employer sign-in / registration state
@@ -38,6 +40,11 @@ export default function LoginPage() {
   const [employerError, setEmployerError] = useState<string | null>(null);
   const [employerSuccess, setEmployerSuccess] = useState<string | null>(null);
   const [selectedDemo, setSelectedDemo] = useState<string>('admin@hrv-homes.com');
+  const [lastCreatedCaregiver, setLastCreatedCaregiver] = useState<{
+    name: string;
+    email: string;
+    employeeCode: string;
+  } | null>(null);
 
   // Time & attendance quick caregiver state
   const [staffEmail, setStaffEmail] = useState('maria.garcia@hrv-homes.com');
@@ -46,13 +53,23 @@ export default function LoginPage() {
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
   const [attendanceSuccess, setAttendanceSuccess] = useState<string | null>(null);
 
-  // Sign-up state for Employer
+  // Fallback houses list if store is still hydrating
+  const availableHouses = houses.length > 0 ? houses : [
+    { id: 'clxhouse01', name: 'Maple House' },
+    { id: 'clxhouse02', name: 'Oak House' },
+    { id: 'clxhouse03', name: 'Pine House' },
+    { id: 'clxhouse04', name: 'Birch House' },
+  ];
+
+  // Sign-up state (default to registering a caregiver / employee for time & attendance)
   const [su, setSu] = useState({
     name: '',
     email: '',
+    phone: '',
+    houseId: availableHouses[0]?.id ?? 'clxhouse01',
     password: '',
     confirm: '',
-    role: 'manager' as 'manager' | 'admin',
+    role: 'employee' as 'employee' | 'manager' | 'admin',
   });
   const [showSuPassword, setShowSuPassword] = useState(false);
 
@@ -110,12 +127,12 @@ export default function LoginPage() {
     const res = login(staffEmail, staffPassword);
     setBusy(false);
     if (!res.ok) {
-      setAttendanceError(res.error ?? 'Staff verification failed. Please verify email and PIN/password.');
+      setAttendanceError(res.error ?? 'Staff verification failed. Please verify email/code and PIN/password.');
       return;
     }
   }
 
-  // 1-Tap Quick DSP Punch for Maria Garcia
+  // 1-Tap Quick DSP Punch
   function onQuickLaunchStaff(demoStaffEmail: string) {
     setStaffEmail(demoStaffEmail);
     setStaffPassword(DEMO_PASSWORD);
@@ -129,7 +146,7 @@ export default function LoginPage() {
     }
   }
 
-  // Employer Registration
+  // Registration: Allows registering Caregiver/Employee accounts OR Administrative accounts
   function onSignUp(e: React.FormEvent) {
     e.preventDefault();
     setEmployerError(null);
@@ -142,14 +159,74 @@ export default function LoginPage() {
       setEmployerError('Password must be at least 8 characters long.');
       return;
     }
+
     setBusy(true);
-    const res = signup({ name: su.name, email: su.email, password: su.password, role: su.role });
-    setBusy(false);
-    if (!res.ok) {
-      setEmployerError(res.error ?? 'Account creation failed.');
-      return;
+
+    if (su.role === 'employee') {
+      // Caregiver registration: create account + employee roster record without kicking employer off the page
+      const res = signup({
+        name: su.name,
+        email: su.email,
+        password: su.password,
+        role: 'employee',
+        phone: su.phone,
+        houseId: su.houseId,
+        autoLogin: false,
+      });
+      setBusy(false);
+
+      if (!res.ok) {
+        setEmployerError(res.error ?? 'Caregiver registration failed.');
+        return;
+      }
+
+      const assignedHouseName = availableHouses.find((h) => h.id === su.houseId)?.name ?? 'Group Home';
+      const code = res.employeeCode ?? 'EMP';
+
+      setLastCreatedCaregiver({
+        name: su.name,
+        email: su.email,
+        employeeCode: code,
+      });
+
+      setEmployerSuccess(
+        `Caregiver account for ${su.name} (${code}) created successfully! Assigned to ${assignedHouseName}. They now have full sign-in access to Time & Attendance.`
+      );
+
+      // Pre-fill credentials into the Time & Attendance terminal on the right side
+      setStaffEmail(su.email);
+      setStaffPassword(su.password);
+      setAttendanceSuccess(`New Caregiver Ready to Clock In: ${su.name} (${code})`);
+
+      // Reset form and switch back to sign-in view
+      setSu({
+        name: '',
+        email: '',
+        phone: '',
+        houseId: availableHouses[0]?.id ?? 'clxhouse01',
+        password: '',
+        confirm: '',
+        role: 'employee',
+      });
+      setMode('signin');
+    } else {
+      // Management registration: auto-log in and redirect to admin dashboard
+      const res = signup({
+        name: su.name,
+        email: su.email,
+        password: su.password,
+        role: su.role,
+        autoLogin: true,
+      });
+      setBusy(false);
+
+      if (!res.ok) {
+        setEmployerError(res.error ?? 'Administrative account creation failed.');
+        return;
+      }
+
+      router.replace('/dashboard');
     }
-    router.replace('/dashboard');
   }
 
   // Employer Password Recovery Step 1
@@ -310,7 +387,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col lg:flex-row">
       
       {/* ========================================================= */}
-      {/* COMPONENT 1 (LEFT SIDE): EMPLOYER SIGN-IN ONLY */}
+      {/* COMPONENT 1 (LEFT SIDE): EMPLOYER SIGN-IN & CAREGIVER REG */}
       {/* ========================================================= */}
       <div className="w-full lg:w-1/2 relative flex flex-col justify-between p-6 sm:p-10 lg:p-12 overflow-y-auto bg-gradient-to-br from-slate-950 via-teal-950/70 to-slate-900 border-b lg:border-b-0 lg:border-r border-white/10">
         <div className="absolute top-0 left-0 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -335,7 +412,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Employer Login Interactive Area */}
+        {/* Employer Login / Registration Interactive Area */}
         <div className="relative z-10 my-6 sm:my-8 space-y-5 max-w-lg w-full mx-auto lg:mx-0">
           <div className="space-y-1.5">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-teal-500/10 text-teal-300 border border-teal-500/25">
@@ -346,15 +423,19 @@ export default function LoginPage() {
               {mode === 'signin'
                 ? 'Employer Sign-In'
                 : mode === 'signup'
-                  ? 'Register Organization Account'
+                  ? su.role === 'employee'
+                    ? 'Register Caregiver Account'
+                    : 'Register Management Account'
                   : 'Employer Account Recovery'}
             </h2>
             <p className="text-xs sm:text-sm text-slate-400">
-              Administrative portal for House Managers, Program Directors, and Payroll Admins.
+              {mode === 'signup'
+                ? 'Create a new employee/caregiver account to grant them immediate Time & Attendance clock-in access.'
+                : 'Administrative portal for House Managers, Program Directors, and Payroll Admins.'}
             </p>
           </div>
 
-          {/* Mode Switcher Tabs for Employer (Sign In vs Register) */}
+          {/* Mode Switcher Tabs for Employer (Sign In vs Register / Add Staff) */}
           {mode !== 'forgot' && (
             <div className="grid grid-cols-2 p-1 rounded-xl bg-slate-900/90 border border-white/10 shadow-inner">
               <button
@@ -387,7 +468,7 @@ export default function LoginPage() {
                 }`}
               >
                 <UserPlus className="w-3.5 h-3.5" />
-                <span>Register</span>
+                <span>Register Staff / Admin</span>
               </button>
             </div>
           )}
@@ -400,9 +481,24 @@ export default function LoginPage() {
             </div>
           )}
           {employerSuccess && (
-            <div className="p-3 rounded-xl bg-emerald-950/50 border border-emerald-500/40 flex items-start gap-2.5 text-xs text-emerald-200">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-              <span>{employerSuccess}</span>
+            <div className="p-3 rounded-xl bg-emerald-950/50 border border-emerald-500/40 space-y-2 text-xs text-emerald-200">
+              <div className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{employerSuccess}</span>
+              </div>
+              {lastCreatedCaregiver && (
+                <div className="pt-2 border-t border-emerald-500/20 flex items-center justify-between">
+                  <span className="text-[11px] text-emerald-300">Credentials pre-filled in Kiosk</span>
+                  <button
+                    type="button"
+                    onClick={() => onQuickLaunchStaff(lastCreatedCaregiver.email)}
+                    className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer shadow-xs"
+                  >
+                    <span>Launch Shift Clock-In Now</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -482,11 +578,55 @@ export default function LoginPage() {
             </form>
           )}
 
-          {/* 2. REGISTRATION FORM */}
+          {/* 2. REGISTRATION FORM (Caregiver / DSP vs Supervisor / Admin) */}
           {mode === 'signup' && (
             <form onSubmit={onSignUp} className="space-y-3.5">
+              {/* Account Purpose Selector */}
+              <div className="space-y-1.5 pb-1">
+                <label className="text-xs font-semibold text-slate-300">Account Type to Register:</label>
+                <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-950 border border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setSu({ ...su, role: 'employee' })}
+                    className={`py-2 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      su.role === 'employee'
+                        ? 'bg-emerald-600 text-white shadow-md ring-1 ring-emerald-400/40'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5 text-emerald-300" />
+                    <span>Caregiver / DSP</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSu({ ...su, role: 'manager' })}
+                    className={`py-2 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      su.role !== 'employee'
+                        ? 'bg-teal-600 text-white shadow-md ring-1 ring-teal-400/40'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Building2 className="w-3.5 h-3.5 text-teal-300" />
+                    <span>Admin / Supervisor</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Informational Callout for Caregiver Account */}
+              {su.role === 'employee' && (
+                <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/25 flex items-center gap-2 text-[11px] text-emerald-300">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>
+                    Registers a care staff member with an <strong>Employee ID</strong> and authorizes them for instant Time &amp; Attendance clock-in.
+                  </span>
+                </div>
+              )}
+
+              {/* Name */}
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-300">Administrator Full Name</label>
+                <label className="text-xs font-medium text-slate-300">
+                  {su.role === 'employee' ? 'Caregiver Full Name' : 'Administrator Full Name'}
+                </label>
                 <div className="relative">
                   <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
@@ -494,14 +634,17 @@ export default function LoginPage() {
                     value={su.name}
                     onChange={(e) => setSu({ ...su, name: e.target.value })}
                     required
-                    placeholder="Jane Doe"
+                    placeholder={su.role === 'employee' ? 'e.g. David Smith' : 'e.g. Sarah Jenkins'}
                     className="w-full bg-slate-900 border border-white/15 rounded-xl py-2 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:outline-hidden focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                   />
                 </div>
               </div>
 
+              {/* Work Email */}
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-300">Work Email</label>
+                <label className="text-xs font-medium text-slate-300">
+                  {su.role === 'employee' ? 'Caregiver Email (Used for Shift Terminal Punch)' : 'Work Email'}
+                </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
@@ -509,15 +652,70 @@ export default function LoginPage() {
                     value={su.email}
                     onChange={(e) => setSu({ ...su, email: e.target.value })}
                     required
-                    placeholder="jane.doe@hrv-homes.com"
+                    placeholder={su.role === 'employee' ? 'david.smith@hrv-homes.com' : 'sarah.jenkins@hrv-homes.com'}
                     className="w-full bg-slate-900 border border-white/15 rounded-xl py-2 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:outline-hidden focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                   />
                 </div>
               </div>
 
+              {/* Caregiver specific: Phone & Assigned House */}
+              {su.role === 'employee' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-300">Phone (Optional)</label>
+                    <div className="relative">
+                      <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        type="tel"
+                        value={su.phone}
+                        onChange={(e) => setSu({ ...su, phone: e.target.value })}
+                        placeholder="207-555-0142"
+                        className="w-full bg-slate-900 border border-white/15 rounded-xl py-2 pl-8 pr-3 text-xs text-white placeholder-slate-500 focus:outline-hidden focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-300">Assigned Facility</label>
+                    <div className="relative">
+                      <Home className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <select
+                        value={su.houseId}
+                        onChange={(e) => setSu({ ...su, houseId: e.target.value })}
+                        className="w-full bg-slate-900 border border-white/15 rounded-xl py-2 pl-8 pr-3 text-xs text-white focus:outline-hidden focus:border-emerald-500"
+                      >
+                        {availableHouses.map((h) => (
+                          <option key={h.id} value={h.id}>
+                            {h.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Administrative Role Selector if Admin is chosen */}
+              {su.role !== 'employee' && (
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-300">Management Level</label>
+                  <select
+                    value={su.role}
+                    onChange={(e) => setSu({ ...su, role: e.target.value as 'manager' | 'admin' })}
+                    className="w-full bg-slate-900 border border-white/15 rounded-xl py-2 px-3 text-xs text-white focus:outline-hidden focus:border-teal-500"
+                  >
+                    <option value="manager">House Supervisor / Manager</option>
+                    <option value="admin">Platform Administrator / HR Director</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Password & Confirm */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-300">Password</label>
+                  <label className="text-xs font-medium text-slate-300">
+                    {su.role === 'employee' ? 'Staff PIN / Password' : 'Password'}
+                  </label>
                   <div className="relative">
                     <input
                       type={showSuPassword ? 'text' : 'password'}
@@ -550,25 +748,31 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-300">Administrative Role</label>
-                <select
-                  value={su.role}
-                  onChange={(e) => setSu({ ...su, role: e.target.value as 'manager' | 'admin' })}
-                  className="w-full bg-slate-900 border border-white/15 rounded-xl py-2 px-3 text-xs text-white focus:outline-hidden focus:border-teal-500"
-                >
-                  <option value="manager">House Supervisor / Manager</option>
-                  <option value="admin">Platform Administrator / HR Director</option>
-                </select>
-              </div>
-
               <button
                 type="submit"
                 disabled={busy}
-                className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-teal-600 hover:bg-teal-500 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                className={`w-full py-3 px-4 rounded-xl font-semibold text-xs text-white transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 ${
+                  su.role === 'employee'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-950/50'
+                    : 'bg-teal-600 hover:bg-teal-500 shadow-teal-950/50'
+                }`}
               >
-                <UserPlus className="w-3.5 h-3.5" />
-                <span>Register Employer Account</span>
+                {busy ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Provisioning Account…</span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4" />
+                    <span>
+                      {su.role === 'employee'
+                        ? 'Register Caregiver & Enable Clock-In'
+                        : 'Register Administrative Account'}
+                    </span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </>
+                )}
               </button>
             </form>
           )}
@@ -839,12 +1043,12 @@ export default function LoginPage() {
 
             <form onSubmit={onStaffClockInSignIn} className="space-y-3">
               <div className="space-y-1">
-                <label className="text-[11px] font-medium text-slate-400">Employee Email or ID</label>
+                <label className="text-[11px] font-medium text-slate-400">Employee Email or Employee Code (e.g. EMP-1001)</label>
                 <input
-                  type="email"
+                  type="text"
                   value={staffEmail}
                   onChange={(e) => setStaffEmail(e.target.value)}
-                  placeholder="e.g. maria.garcia@hrv-homes.com"
+                  placeholder="e.g. david.smith@hrv-homes.com or EMP-1001"
                   required
                   className="w-full bg-slate-950 border border-white/10 rounded-xl py-2.5 px-3 text-xs text-white placeholder-slate-500 focus:outline-hidden focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                 />

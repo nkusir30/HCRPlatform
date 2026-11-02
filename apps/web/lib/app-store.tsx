@@ -119,12 +119,22 @@ function newId(prefix: string) {
   return `${prefix}${Date.now().toString(36)}${idCounter.toString(36)}`;
 }
 
+export interface SignupInput {
+  name: string;
+  email: string;
+  password: string;
+  role: Session['role'];
+  phone?: string;
+  houseId?: string;
+  autoLogin?: boolean;
+}
+
 interface AppStore extends AppState {
   hydrated: boolean;
   syncStatus: SyncStatus;
   lastSyncError: string | null;
   login: (email: string, password: string) => { ok: boolean; error?: string };
-  signup: (input: { name: string; email: string; password: string; role: Session['role'] }) => { ok: boolean; error?: string };
+  signup: (input: SignupInput) => { ok: boolean; error?: string; employeeCode?: string };
   resetPassword: (email: string, newPassword: string) => { ok: boolean; error?: string };
   logout: () => void;
   addEmployee: (e: Omit<Employee, 'id'>) => void;
@@ -256,9 +266,17 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     syncStatus,
     lastSyncError,
     login(email, password) {
-      const account = state.accounts.find(
-        (a) => a.email.toLowerCase() === email.trim().toLowerCase(),
+      const trimmed = email.trim().toLowerCase();
+      let account = state.accounts.find(
+        (a) => a.email.toLowerCase() === trimmed,
       );
+      // If not found by email, allow clock-in by Employee Code (e.g. EMP-1001)
+      if (!account) {
+        const emp = state.employees.find((e) => e.employeeCode.toLowerCase() === trimmed);
+        if (emp) {
+          account = state.accounts.find((a) => a.email.toLowerCase() === emp.email.toLowerCase());
+        }
+      }
       const applyLocalSession = (name: string, role: Session['role'], emailAddr: string) => {
         const session: Session = { email: emailAddr, name, role, orgId: state.orgId };
         setState((s) => ({ ...s, session }));
@@ -266,7 +284,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       // Try the real API first so the JWT is stored and later writes are
       // authenticated; fall back to the local demo accounts when offline.
       apiPost<{ access_token?: string }>(`/auth/login`, {
-        email: email.trim(),
+        email: account?.email ?? email.trim(),
         password,
       })
         .then((res) => {
@@ -277,7 +295,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         .catch(() => {
           /* offline — local session below still applies */
         });
-      if (!account) return { ok: false, error: 'No account found for that email.' };
+      if (!account) return { ok: false, error: 'No account found for that email or employee code.' };
       if (account.password !== password) return { ok: false, error: 'Incorrect password.' };
       applyLocalSession(account.name, account.role, account.email);
       return { ok: true };
@@ -297,8 +315,69 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         password: input.password,
         role: input.role,
       };
-      const session: Session = { email: account.email, name: account.name, role: account.role, orgId: state.orgId };
-      setState((s) => ({ ...s, accounts: [...s.accounts, account], session }));
+
+      let nextEmployees = state.employees;
+      let createdEmployeeCode = '';
+      let nextSchedules = state.schedules;
+
+      // Automatically register the corresponding Employee roster record so EVV clock-in works
+      if (input.role === 'employee') {
+        const existingEmp = state.employees.find((e) => e.email.toLowerCase() === email);
+        if (existingEmp) {
+          createdEmployeeCode = existingEmp.employeeCode;
+        } else {
+          const parts = input.name.trim().split(/\s+/);
+          const firstName = parts[0] || 'Caregiver';
+          const lastName = parts.slice(1).join(' ') || 'Staff';
+          createdEmployeeCode = `EMP-${Math.floor(1000 + Math.random() * 9000)}`;
+          const newEmpId = newId('clxemp');
+          const newEmp: Employee = {
+            id: newEmpId,
+            companyId: state.companyId,
+            firstName,
+            lastName,
+            email,
+            phone: input.phone || '',
+            employeeCode: createdEmployeeCode,
+            employmentStatus: 'Full-time',
+            hireDate: new Date().toISOString().slice(0, 10),
+            isActive: true,
+          };
+          nextEmployees = [newEmp, ...state.employees];
+
+          // If a house was selected, provision a standard shift schedule for this caregiver
+          if (input.houseId) {
+            const weekdays = [1, 2, 3, 4, 5];
+            const newShifts: Schedule[] = weekdays.map((day) => ({
+              id: newId('clxsch'),
+              employeeId: newEmpId,
+              houseId: input.houseId!,
+              payrollPeriodId: state.schedules[0]?.payrollPeriodId ?? 'clxpayprd01',
+              dayOfWeek: day,
+              startTime: '08:00',
+              endTime: '16:00',
+              breakDuration: 30,
+              scheduleType: 'shift',
+              comment: 'Direct care shift',
+            }));
+            nextSchedules = [...state.schedules, ...newShifts];
+          }
+        }
+      }
+
+      const shouldApplySession = input.autoLogin !== false;
+      const session: Session | null = shouldApplySession
+        ? { email: account.email, name: account.name, role: account.role, orgId: state.orgId }
+        : state.session;
+
+      setState((s) => ({
+        ...s,
+        accounts: [...s.accounts, account],
+        employees: nextEmployees,
+        schedules: nextSchedules,
+        ...(shouldApplySession ? { session } : {}),
+      }));
+
       // Mirror the account to Postgres (hashed password + JWT) so it survives a
       // new device / fresh deploy, not just this browser. Best-effort: the local
       // demo account above is the source of truth for this session regardless.
@@ -315,7 +394,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           if (res.ok) {
             setSyncStatus('synced');
             setLastSyncError(null);
-            if (res.accessToken) setAuthToken(res.accessToken);
+            if (shouldApplySession && res.accessToken) setAuthToken(res.accessToken);
           } else {
             setSyncStatus('local-only');
             setLastSyncError(res.error ?? 'signup sync failed');
@@ -325,7 +404,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           setSyncStatus('local-only');
           setLastSyncError(e instanceof Error ? e.message : 'network error');
         });
-      return { ok: true };
+      return { ok: true, employeeCode: createdEmployeeCode };
     },
     resetPassword(email, newPassword) {
       const normalized = email.trim().toLowerCase();
